@@ -32,8 +32,8 @@ import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.dashboard.DashboardItem;
 import com.donohoedigital.games.poker.dashboard.DashboardManager;
 import com.donohoedigital.games.poker.dashboard.DashboardPanel;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.model.TournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
@@ -567,13 +567,13 @@ class UiDashboardWidgetsHandler extends BaseHandler {
         }
     }
 
-    private static List<String> handToStrings(Hand hand) {
+    private static List<String> handToStrings(ClientHand hand) {
         if (hand == null) {
             return List.of();
         }
         List<String> out = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
-            Card card = hand.getCard(i);
+            ClientCard card = hand.getCard(i);
             if (card != null && !card.isBlank()) {
                 out.add(card.toString());
             }

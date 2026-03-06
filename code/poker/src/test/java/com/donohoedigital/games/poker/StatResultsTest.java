@@ -20,7 +20,8 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -101,9 +102,8 @@ class StatResultsTest {
     void should_GenerateHTML_WithSingleResult() {
         StatResults results = new StatResults();
         HandList handList = new HandList("Pocket Aces");
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result = new StatResult(hole, handList, 70, 20, 10);
 
         results.put("AA", result);
@@ -119,15 +119,13 @@ class StatResultsTest {
         StatResults results = new StatResults();
 
         // Result 1
-        Hand hole1 = new Hand(2);
-        hole1.addCard(Card.SPADES_A);
-        hole1.addCard(Card.HEARTS_A);
+        ClientHand hole1 = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result1 = new StatResult(hole1, new HandList("AA"), 85, 10, 5);
 
         // Result 2
-        Hand hole2 = new Hand(2);
-        hole2.addCard(Card.SPADES_K);
-        hole2.addCard(Card.HEARTS_K);
+        ClientHand hole2 = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.KING),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.KING));
         StatResult result2 = new StatResult(hole2, new HandList("KK"), 75, 20, 5);
 
         results.put("AA", result1);
@@ -143,9 +141,8 @@ class StatResultsTest {
     void should_GenerateHTML_WithHandGroupKey() {
         StatResults results = new StatResults();
         HandGroup group = HandGroup.parse("AA", 5);
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result = new StatResult(hole, new HandList("AA"), 80, 15, 5);
 
         results.put(group, result);
@@ -160,9 +157,8 @@ class StatResultsTest {
     @Test
     void should_GenerateHTML_WithStringKey() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_K);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.KING));
         StatResult result = new StatResult(hole, new HandList("AK"), 65, 30, 5);
 
         results.put("AceKing", result);
@@ -175,9 +171,8 @@ class StatResultsTest {
     @Test
     void should_IncludeHeaderAndFooter_InHTML() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         results.put("AA", new StatResult(hole, new HandList("AA"), 70, 20, 10));
 
         String html = results.toHTML();
@@ -199,9 +194,8 @@ class StatResultsTest {
     @Test
     void should_EncodeHTML_InHandName() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result = new StatResult(hole, new HandList("Test"), 70, 20, 10);
 
         // Use a key with HTML special characters
@@ -218,9 +212,8 @@ class StatResultsTest {
     @Test
     void should_HandleNullKey() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result = new StatResult(hole, new HandList("AA"), 70, 20, 10);
 
         // LinkedHashMap allows null keys
@@ -232,9 +225,8 @@ class StatResultsTest {
     @Test
     void should_OverwriteExistingKey() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result1 = new StatResult(hole, new HandList("AA"), 70, 20, 10);
         StatResult result2 = new StatResult(hole, new HandList("AA"), 80, 15, 5);
 
@@ -248,9 +240,8 @@ class StatResultsTest {
     @Test
     void should_HandleMixedKeyTypes() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
 
         HandGroup group = HandGroup.parse("AA", 5);
         results.put(group, new StatResult(hole, new HandList("AA"), 85, 10, 5));
@@ -263,9 +254,8 @@ class StatResultsTest {
     @Test
     void should_HandleObjectKey_WithToString() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         StatResult result = new StatResult(hole, new HandList("AA"), 70, 20, 10);
 
         Object customKey = new Object(); // Will use toString()
@@ -279,9 +269,8 @@ class StatResultsTest {
     @Test
     void should_RemoveResult() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         results.put("AA", new StatResult(hole, new HandList("AA"), 70, 20, 10));
 
         results.remove("AA");
@@ -292,9 +281,8 @@ class StatResultsTest {
     @Test
     void should_ClearAllResults() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         results.put("AA", new StatResult(hole, new HandList("AA"), 70, 20, 10));
         results.put("KK", new StatResult(hole, new HandList("KK"), 75, 20, 5));
 
@@ -306,9 +294,8 @@ class StatResultsTest {
     @Test
     void should_CheckContainsKey() {
         StatResults results = new StatResults();
-        Hand hole = new Hand(2);
-        hole.addCard(Card.SPADES_A);
-        hole.addCard(Card.HEARTS_A);
+        ClientHand hole = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.HEARTS, ClientCard.ACE));
         results.put("AA", new StatResult(hole, new HandList("AA"), 70, 20, 10));
 
         assertThat(results.containsKey("AA")).isTrue();

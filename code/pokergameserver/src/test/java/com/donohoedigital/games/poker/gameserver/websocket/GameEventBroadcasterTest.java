@@ -17,6 +17,8 @@
  */
 package com.donohoedigital.games.poker.gameserver.websocket;
 
+import com.donohoedigital.config.ApplicationType;
+import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
@@ -54,6 +56,7 @@ class GameEventBroadcasterTest {
 
     @BeforeEach
     void setUp() throws Exception {
+        new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
         objectMapper = new ObjectMapper();
         objectMapper.findAndRegisterModules();
         connectionManager = new GameConnectionManager();

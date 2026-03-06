@@ -20,7 +20,8 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -30,12 +31,13 @@ import static org.assertj.core.api.Assertions.*;
  */
 class HandStatTest {
 
-    private HandSorted hand;
+    private ClientHand hand;
 
     @BeforeEach
     void setUp() {
         new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
-        hand = new HandSorted(Card.SPADES_A, Card.SPADES_K); // AKs
+        hand = ClientHand.of(ClientCard.getCard(ClientCard.SPADES, ClientCard.ACE),
+                ClientCard.getCard(ClientCard.SPADES, ClientCard.KING)); // AKs
         // Reset static noise to default
         HandStat.noise_ = 0.40;
     }

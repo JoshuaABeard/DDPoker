@@ -26,10 +26,11 @@ import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.dashboard.DashboardAdvisor;
 import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.gameserver.ActionRequest;
@@ -296,11 +297,11 @@ class StateHandler extends BaseHandler {
         }
 
         // Hole cards — show for human, showdown, or when aifaceup cheat is active
-        Hand holeCards = player.getHand();
+        ClientHand holeCards = player.getHand();
         boolean aiFaceUp = !player.isHuman()
                 && hand != null
                 && PokerUtils.isOptionOn(PokerConstants.OPTION_CHEAT_AIFACEUP);
-        if (player.isHuman() || (hand != null && hand.getRound() == BettingRound.SHOWDOWN) || aiFaceUp) {
+        if (player.isHuman() || (hand != null && hand.getRound() == ClientBettingRound.SHOWDOWN) || aiFaceUp) {
             p.put("holeCards", handToStrings(holeCards));
         } else {
             p.put("holeCards", List.of()); // hidden for AI players
@@ -311,7 +312,7 @@ class StateHandler extends BaseHandler {
         }
 
         // Hand strength and rank for the human player during a hand
-        if (player.isHuman() && hand != null && hand.getRound() != BettingRound.NONE) {
+        if (player.isHuman() && hand != null && hand.getRound() != ClientBettingRound.NONE) {
             p.put("handStrength", player.getHandStrength());
             p.put("effectiveHandStrength", player.getEffectiveHandStrength());
             PokerGame game = player.getTable() != null ? player.getTable().getGame() : null;
@@ -530,11 +531,11 @@ class StateHandler extends BaseHandler {
         return result;
     }
 
-    private List<String> handToStrings(Hand hand) {
+    private List<String> handToStrings(ClientHand hand) {
         if (hand == null || hand.size() == 0) return List.of();
         List<String> result = new ArrayList<>();
         for (int i = 0; i < hand.size(); i++) {
-            Card c = hand.getCard(i);
+            ClientCard c = hand.getCard(i);
             if (c != null && !c.isBlank()) result.add(c.getDisplay());
         }
         return result;

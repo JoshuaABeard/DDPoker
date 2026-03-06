@@ -139,7 +139,7 @@ class ClientCardTest {
         assertEquals("King", ClientCard.parse("Kh").rankDisplay());
         assertEquals("Queen", ClientCard.parse("Qh").rankDisplay());
         assertEquals("Jack", ClientCard.parse("Jh").rankDisplay());
-        assertEquals("Ten", ClientCard.parse("Th").rankDisplay());
+        assertEquals("10", ClientCard.parse("Th").rankDisplay());
     }
 
     @Test

@@ -41,6 +41,7 @@ package com.donohoedigital.games.tools;
 import com.donohoedigital.base.*;
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.poker.*;
+import com.donohoedigital.games.poker.display.*;
 import com.donohoedigital.games.poker.engine.*;
 import org.apache.logging.log4j.*;
 
@@ -113,7 +114,7 @@ public class CardImageCreator extends BaseCommandLineApp {
             file = new File(".", "card_" + sName + ".png");
             logger.debug("Processing " + card + " to " + file.getName());
             image = new BufferedImage(rect.width, rect.height, BufferedImage.TYPE_INT_ARGB);
-            piece.setCard(card);
+            piece.setCard(card.isBlank() ? ClientCard.BLANK : ClientCard.getCard(card.getSuit(), card.getRank()));
             piece.setUp(true);
             piece.setStroke(true);
 

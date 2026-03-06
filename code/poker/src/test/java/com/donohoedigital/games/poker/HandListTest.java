@@ -21,7 +21,8 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.*;
 import com.donohoedigital.games.engine.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -34,7 +35,7 @@ class HandListTest {
     @BeforeEach
     void setUp() {
         ConfigManager configMgr = new ConfigManager("poker", ApplicationType.HEADLESS_CLIENT);
-        configMgr.loadGuiConfig(); // Required for Card.toString() in toHTML()
+        configMgr.loadGuiConfig(); // Required for ClientCard.toString() in toHTML()
     }
 
     // ========== Constructor Tests ==========
@@ -59,8 +60,8 @@ class HandListTest {
     @Test
     void should_CopyHandsAndName_WhenCopyConstructor() {
         HandList original = new HandList("Original");
-        original.addAllPairs(Card.ACE);
-        original.addAllSuited(Card.ACE, Card.KING);
+        original.addAllPairs(ClientCard.ACE);
+        original.addAllSuited(ClientCard.ACE, ClientCard.KING);
 
         HandList copy = new HandList(original);
 
@@ -72,7 +73,7 @@ class HandListTest {
     @Test
     void should_OverrideName_WhenCopyConstructorWithName() {
         HandList original = new HandList("Original");
-        original.addAllPairs(Card.ACE);
+        original.addAllPairs(ClientCard.ACE);
 
         HandList copy = new HandList(original, "Copy");
 
@@ -86,7 +87,7 @@ class HandListTest {
     void should_Add6Hands_WhenAddAllPairsSingleRank() {
         HandList list = new HandList();
 
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
         assertThat(list.size()).isEqualTo(6); // 6 combinations of AA
         assertThat(list.getCount()).isEqualTo(1); // 1 unique pair type
@@ -96,14 +97,14 @@ class HandListTest {
     void should_AddCorrectHands_WhenAddAllPairsAces() {
         HandList list = new HandList();
 
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
         // Should contain all 6 combinations: AcAd, AcAh, AcAs, AdAh, AdAs, AhAs
         assertThat(list.size()).isEqualTo(6);
         for (int i = 0; i < list.size(); i++) {
-            Hand hand = list.get(i);
-            assertThat(hand.getCard(0).getRank()).isEqualTo(Card.ACE);
-            assertThat(hand.getCard(1).getRank()).isEqualTo(Card.ACE);
+            ClientHand hand = list.get(i);
+            assertThat(hand.getCard(0).getRank()).isEqualTo(ClientCard.ACE);
+            assertThat(hand.getCard(1).getRank()).isEqualTo(ClientCard.ACE);
         }
     }
 
@@ -111,7 +112,7 @@ class HandListTest {
     void should_Add39Hands_WhenAddAllPairsRange() {
         HandList list = new HandList();
 
-        list.addAllPairs(Card.JACK, Card.ACE); // JJ, QQ, KK, AA
+        list.addAllPairs(ClientCard.JACK, ClientCard.ACE); // JJ, QQ, KK, AA
 
         assertThat(list.size()).isEqualTo(24); // 4 ranks × 6 combinations = 24
         // Actually let me recalculate: JJ(6) + QQ(6) + KK(6) + AA(6) = 24
@@ -121,7 +122,7 @@ class HandListTest {
     void should_HandleReversedRange_WhenAddAllPairs() {
         HandList list = new HandList();
 
-        list.addAllPairs(Card.ACE, Card.JACK); // Reversed order
+        list.addAllPairs(ClientCard.ACE, ClientCard.JACK); // Reversed order
 
         assertThat(list.size()).isEqualTo(24); // Should still add JJ-AA
     }
@@ -132,7 +133,7 @@ class HandListTest {
     void should_Add4Hands_WhenAddAllSuited() {
         HandList list = new HandList();
 
-        list.addAllSuited(Card.ACE, Card.KING);
+        list.addAllSuited(ClientCard.ACE, ClientCard.KING);
 
         assertThat(list.size()).isEqualTo(4); // AKs in 4 suits
         assertThat(list.getCount()).isEqualTo(1);
@@ -142,11 +143,11 @@ class HandListTest {
     void should_AddOnlySuitedHands_WhenAddAllSuited() {
         HandList list = new HandList();
 
-        list.addAllSuited(Card.ACE, Card.KING);
+        list.addAllSuited(ClientCard.ACE, ClientCard.KING);
 
         for (int i = 0; i < list.size(); i++) {
-            Hand hand = list.get(i);
-            assertThat(hand.getCard(0).getCardSuit()).isEqualTo(hand.getCard(1).getCardSuit());
+            ClientHand hand = list.get(i);
+            assertThat(hand.getCard(0).getSuit()).isEqualTo(hand.getCard(1).getSuit());
         }
     }
 
@@ -154,7 +155,7 @@ class HandListTest {
     void should_DoNothing_WhenAddAllSuitedSameRank() {
         HandList list = new HandList();
 
-        list.addAllSuited(Card.ACE, Card.ACE);
+        list.addAllSuited(ClientCard.ACE, ClientCard.ACE);
 
         assertThat(list.size()).isZero(); // No suited pairs possible
         assertThat(list.getCount()).isZero();
@@ -166,7 +167,7 @@ class HandListTest {
     void should_Add12Hands_WhenAddAllUnsuited() {
         HandList list = new HandList();
 
-        list.addAllUnsuited(Card.ACE, Card.KING);
+        list.addAllUnsuited(ClientCard.ACE, ClientCard.KING);
 
         assertThat(list.size()).isEqualTo(12); // AKo in 12 off-suit combinations
         assertThat(list.getCount()).isEqualTo(1);
@@ -176,11 +177,11 @@ class HandListTest {
     void should_AddOnlyUnsuitedHands_WhenAddAllUnsuited() {
         HandList list = new HandList();
 
-        list.addAllUnsuited(Card.ACE, Card.KING);
+        list.addAllUnsuited(ClientCard.ACE, ClientCard.KING);
 
         for (int i = 0; i < list.size(); i++) {
-            Hand hand = list.get(i);
-            assertThat(hand.getCard(0).getCardSuit()).isNotEqualTo(hand.getCard(1).getCardSuit());
+            ClientHand hand = list.get(i);
+            assertThat(hand.getCard(0).getSuit()).isNotEqualTo(hand.getCard(1).getSuit());
         }
     }
 
@@ -188,7 +189,7 @@ class HandListTest {
     void should_Add6PairHands_WhenAddAllUnsuitedSameRank() {
         HandList list = new HandList();
 
-        list.addAllUnsuited(Card.ACE, Card.ACE);
+        list.addAllUnsuited(ClientCard.ACE, ClientCard.ACE);
 
         assertThat(list.size()).isEqualTo(6); // Falls back to addAllPairs
     }
@@ -199,7 +200,7 @@ class HandListTest {
     void should_Add16Hands_WhenAddAllDifferentRanks() {
         HandList list = new HandList();
 
-        list.addAll(Card.ACE, Card.KING);
+        list.addAll(ClientCard.ACE, ClientCard.KING);
 
         assertThat(list.size()).isEqualTo(16); // 4 suited + 12 unsuited
     }
@@ -208,7 +209,7 @@ class HandListTest {
     void should_Add6Hands_WhenAddAllSameRank() {
         HandList list = new HandList();
 
-        list.addAll(Card.KING, Card.KING);
+        list.addAll(ClientCard.KING, ClientCard.KING);
 
         assertThat(list.size()).isEqualTo(6); // Falls back to pairs
     }
@@ -218,9 +219,9 @@ class HandListTest {
     @Test
     void should_Remove6Hands_WhenRemoveAllPairs() {
         HandList list = new HandList();
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
-        list.removeAllPairs(Card.ACE);
+        list.removeAllPairs(ClientCard.ACE);
 
         assertThat(list.size()).isZero();
         assertThat(list.getCount()).isZero();
@@ -229,9 +230,9 @@ class HandListTest {
     @Test
     void should_Remove4Hands_WhenRemoveAllSuited() {
         HandList list = new HandList();
-        list.addAllSuited(Card.ACE, Card.KING);
+        list.addAllSuited(ClientCard.ACE, ClientCard.KING);
 
-        list.removeAllSuited(Card.ACE, Card.KING);
+        list.removeAllSuited(ClientCard.ACE, ClientCard.KING);
 
         assertThat(list.size()).isZero();
         assertThat(list.getCount()).isZero();
@@ -240,9 +241,9 @@ class HandListTest {
     @Test
     void should_Remove12Hands_WhenRemoveAllUnsuited() {
         HandList list = new HandList();
-        list.addAllUnsuited(Card.ACE, Card.KING);
+        list.addAllUnsuited(ClientCard.ACE, ClientCard.KING);
 
-        list.removeAllUnsuited(Card.ACE, Card.KING);
+        list.removeAllUnsuited(ClientCard.ACE, ClientCard.KING);
 
         assertThat(list.size()).isZero();
         assertThat(list.getCount()).isZero();
@@ -251,9 +252,9 @@ class HandListTest {
     @Test
     void should_RemoveSpecificHand_WhenRemoveSingleHand() {
         HandList list = new HandList();
-        Card aceClubs = Card.getCard(CardSuit.CLUBS, Card.ACE);
-        Card aceDiamonds = Card.getCard(CardSuit.DIAMONDS, Card.ACE);
-        HandSorted hand = new HandSorted(aceClubs, aceDiamonds);
+        ClientCard aceClubs = ClientCard.getCard(ClientCard.CLUBS, ClientCard.ACE);
+        ClientCard aceDiamonds = ClientCard.getCard(ClientCard.DIAMONDS, ClientCard.ACE);
+        ClientHand hand = ClientHand.of(aceClubs, aceDiamonds);
 
         list.add(hand);
         assertThat(list.size()).isEqualTo(1);
@@ -267,9 +268,9 @@ class HandListTest {
     @Test
     void should_ReturnTrue_WhenContainsAnyFindsHand() {
         HandList list = new HandList();
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
-        boolean contains = list.containsAny(Card.ACE, Card.ACE);
+        boolean contains = list.containsAny(ClientCard.ACE, ClientCard.ACE);
 
         assertThat(contains).isTrue();
     }
@@ -277,9 +278,9 @@ class HandListTest {
     @Test
     void should_ReturnFalse_WhenContainsAnyDoesNotFindHand() {
         HandList list = new HandList();
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
-        boolean contains = list.containsAny(Card.KING, Card.KING);
+        boolean contains = list.containsAny(ClientCard.KING, ClientCard.KING);
 
         assertThat(contains).isFalse();
     }
@@ -287,9 +288,9 @@ class HandListTest {
     @Test
     void should_ReturnTrue_WhenContainsAnySuitedFindsHand() {
         HandList list = new HandList();
-        list.addAllSuited(Card.ACE, Card.KING);
+        list.addAllSuited(ClientCard.ACE, ClientCard.KING);
 
-        boolean contains = list.containsAny(Card.ACE, Card.KING, true);
+        boolean contains = list.containsAny(ClientCard.ACE, ClientCard.KING, true);
 
         assertThat(contains).isTrue();
     }
@@ -297,9 +298,9 @@ class HandListTest {
     @Test
     void should_ReturnFalse_WhenContainsAnySuitedDoesNotFindHand() {
         HandList list = new HandList();
-        list.addAllUnsuited(Card.ACE, Card.KING); // Only unsuited
+        list.addAllUnsuited(ClientCard.ACE, ClientCard.KING); // Only unsuited
 
-        boolean contains = list.containsAny(Card.ACE, Card.KING, true); // Looking for suited
+        boolean contains = list.containsAny(ClientCard.ACE, ClientCard.KING, true); // Looking for suited
 
         assertThat(contains).isFalse();
     }
@@ -307,9 +308,9 @@ class HandListTest {
     @Test
     void should_ReturnTrue_WhenContainsAnyUnsuitedFindsHand() {
         HandList list = new HandList();
-        list.addAllUnsuited(Card.ACE, Card.KING);
+        list.addAllUnsuited(ClientCard.ACE, ClientCard.KING);
 
-        boolean contains = list.containsAny(Card.ACE, Card.KING, false);
+        boolean contains = list.containsAny(ClientCard.ACE, ClientCard.KING, false);
 
         assertThat(contains).isTrue();
     }
@@ -317,9 +318,9 @@ class HandListTest {
     @Test
     void should_ReturnFalse_WhenContainsAnyUnsuitedDoesNotFindHand() {
         HandList list = new HandList();
-        list.addAllSuited(Card.ACE, Card.KING); // Only suited
+        list.addAllSuited(ClientCard.ACE, ClientCard.KING); // Only suited
 
-        boolean contains = list.containsAny(Card.ACE, Card.KING, false); // Looking for unsuited
+        boolean contains = list.containsAny(ClientCard.ACE, ClientCard.KING, false); // Looking for unsuited
 
         assertThat(contains).isFalse();
     }
@@ -329,8 +330,8 @@ class HandListTest {
     @Test
     void should_ReturnCorrectSize_WhenHandsAdded() {
         HandList list = new HandList();
-        list.addAllPairs(Card.ACE);
-        list.addAllSuited(Card.ACE, Card.KING);
+        list.addAllPairs(ClientCard.ACE);
+        list.addAllSuited(ClientCard.ACE, ClientCard.KING);
 
         assertThat(list.size()).isEqualTo(10); // 6 + 4
     }
@@ -338,13 +339,13 @@ class HandListTest {
     @Test
     void should_ReturnCorrectHand_WhenGetByIndex() {
         HandList list = new HandList();
-        Card aceClubs = Card.getCard(CardSuit.CLUBS, Card.ACE);
-        Card aceDiamonds = Card.getCard(CardSuit.DIAMONDS, Card.ACE);
-        HandSorted hand = new HandSorted(aceClubs, aceDiamonds);
+        ClientCard aceClubs = ClientCard.getCard(ClientCard.CLUBS, ClientCard.ACE);
+        ClientCard aceDiamonds = ClientCard.getCard(ClientCard.DIAMONDS, ClientCard.ACE);
+        ClientHand hand = ClientHand.of(aceClubs, aceDiamonds);
 
         list.add(hand);
 
-        HandSorted retrieved = list.get(0);
+        ClientHand retrieved = list.get(0);
         assertThat(retrieved).isEqualTo(hand);
     }
 
@@ -353,7 +354,7 @@ class HandListTest {
     @Test
     void should_CalculateCorrectPercent_WhenHandsAdded() {
         HandList list = new HandList();
-        list.addAllPairs(Card.ACE); // 6 hands
+        list.addAllPairs(ClientCard.ACE); // 6 hands
 
         double percent = list.getPercent();
 
@@ -366,9 +367,9 @@ class HandListTest {
         HandList list = new HandList();
 
         // Add all 169 possible starting hands (13 pairs + 78*2 suited/unsuited combos)
-        for (int rank1 = Card.TWO; rank1 <= Card.ACE; rank1++) {
+        for (int rank1 = ClientCard.TWO; rank1 <= ClientCard.ACE; rank1++) {
             list.addAllPairs(rank1);
-            for (int rank2 = rank1 + 1; rank2 <= Card.ACE; rank2++) {
+            for (int rank2 = rank1 + 1; rank2 <= ClientCard.ACE; rank2++) {
                 list.addAll(rank1, rank2);
             }
         }
@@ -422,7 +423,7 @@ class HandListTest {
     @Test
     void should_GenerateHTML_WhenHandsPresent() {
         HandList list = new HandList();
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
         String html = list.toHTML();
 
@@ -434,7 +435,7 @@ class HandListTest {
     void should_IncludeDescription_WhenToHTMLWithDescription() {
         HandList list = new HandList();
         list.setDescription("Premium Hands");
-        list.addAllPairs(Card.ACE);
+        list.addAllPairs(ClientCard.ACE);
 
         String html = list.toHTML();
 
@@ -456,10 +457,10 @@ class HandListTest {
     @Test
     void should_AddAllHandsFromOtherList_WhenAddAllCalled() {
         HandList list1 = new HandList();
-        list1.addAllPairs(Card.ACE);
+        list1.addAllPairs(ClientCard.ACE);
 
         HandList list2 = new HandList();
-        list2.addAllPairs(Card.KING);
+        list2.addAllPairs(ClientCard.KING);
 
         list1.addAll(list2);
 
@@ -469,10 +470,10 @@ class HandListTest {
     @Test
     void should_NotAffectOriginal_WhenAddAllFromOtherList() {
         HandList list1 = new HandList();
-        list1.addAllPairs(Card.ACE);
+        list1.addAllPairs(ClientCard.ACE);
 
         HandList list2 = new HandList();
-        list2.addAllPairs(Card.KING);
+        list2.addAllPairs(ClientCard.KING);
 
         list1.addAll(list2);
 
@@ -494,7 +495,7 @@ class HandListTest {
     void should_HandleEmptyList_WhenRemovingNonExistentHands() {
         HandList list = new HandList();
 
-        list.removeAllPairs(Card.ACE); // Should not throw
+        list.removeAllPairs(ClientCard.ACE); // Should not throw
 
         assertThat(list.size()).isZero();
     }
@@ -503,8 +504,8 @@ class HandListTest {
     void should_HandleDuplicateAdds_WhenSameHandAddedTwice() {
         HandList list = new HandList();
 
-        list.addAllPairs(Card.ACE);
-        list.addAllPairs(Card.ACE); // Add again
+        list.addAllPairs(ClientCard.ACE);
+        list.addAllPairs(ClientCard.ACE); // Add again
 
         assertThat(list.size()).isEqualTo(12); // 6 + 6 (duplicates allowed)
         assertThat(list.getCount()).isEqualTo(2); // Count tracks calls
@@ -521,7 +522,7 @@ class HandListTest {
     void should_HandleLowRanks_WhenAddingDeuces() {
         HandList list = new HandList();
 
-        list.addAllPairs(Card.TWO);
+        list.addAllPairs(ClientCard.TWO);
 
         assertThat(list.size()).isEqualTo(6);
     }

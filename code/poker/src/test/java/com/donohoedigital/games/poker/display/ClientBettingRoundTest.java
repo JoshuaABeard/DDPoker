@@ -27,7 +27,7 @@ class ClientBettingRoundTest {
 
     @Test
     void values() {
-        assertEquals(5, ClientBettingRound.values().length);
+        assertEquals(6, ClientBettingRound.values().length);
     }
 
     @Test

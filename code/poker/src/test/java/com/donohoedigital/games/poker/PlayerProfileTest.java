@@ -21,7 +21,7 @@ package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
-import com.donohoedigital.games.poker.engine.state.BettingRound;
+import com.donohoedigital.games.poker.display.ClientBettingRound;
 import com.donohoedigital.games.poker.model.OnlineProfile;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -326,7 +326,7 @@ class PlayerProfileTest {
         profile.init();
 
         // Pre-flop fold seed is 14
-        assertThat(profile.roundactions_[BettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_FOLD]).isEqualTo(14);
+        assertThat(profile.roundactions_[ClientBettingRound.PRE_FLOP.toLegacy()][HandAction.ACTION_FOLD]).isEqualTo(14);
     }
 
     @Test
@@ -334,7 +334,7 @@ class PlayerProfileTest {
         profile.init();
 
         // Pre-flop total seeded to 20
-        assertThat(profile.nRoundActionCnt_[BettingRound.PRE_FLOP.toLegacy()]).isEqualTo(20);
+        assertThat(profile.nRoundActionCnt_[ClientBettingRound.PRE_FLOP.toLegacy()]).isEqualTo(20);
     }
 
     @Test
@@ -367,7 +367,7 @@ class PlayerProfileTest {
         profile.init();
 
         // Pre-flop: fold=14, total=20 → 14*100/20 = 70%
-        int freq = profile.getFrequency(BettingRound.PRE_FLOP.toLegacy(), HandAction.ACTION_FOLD);
+        int freq = profile.getFrequency(ClientBettingRound.PRE_FLOP.toLegacy(), HandAction.ACTION_FOLD);
         assertThat(freq).isEqualTo(70);
     }
 
@@ -376,7 +376,7 @@ class PlayerProfileTest {
         profile.init();
 
         // Pre-flop: call=3, total=20 → 3*100/20 = 15%
-        int freq = profile.getFrequency(BettingRound.PRE_FLOP.toLegacy(), HandAction.ACTION_CALL);
+        int freq = profile.getFrequency(ClientBettingRound.PRE_FLOP.toLegacy(), HandAction.ACTION_CALL);
         assertThat(freq).isEqualTo(15);
     }
 
@@ -385,7 +385,7 @@ class PlayerProfileTest {
         profile.init();
 
         // Flop: fold=6, total=20 → 6*100/20 = 30%
-        int freq = profile.getFrequency(BettingRound.FLOP.toLegacy(), HandAction.ACTION_FOLD);
+        int freq = profile.getFrequency(ClientBettingRound.FLOP.toLegacy(), HandAction.ACTION_FOLD);
         assertThat(freq).isEqualTo(30);
     }
 

@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-import com.donohoedigital.games.poker.engine.PokerConstants;
+import com.donohoedigital.games.poker.protocol.constants.ProtocolConstants;
 
 /**
  * Tests for {@link ImpExpHand} data class.
@@ -63,12 +63,12 @@ class ImpExpHandTest {
     void constructor_initializesArraysWithCorrectLength() {
         ImpExpHand hand = new ImpExpHand();
 
-        assertThat(hand.players).hasSize(PokerConstants.SEATS);
-        assertThat(hand.betChips).hasSize(PokerConstants.SEATS);
-        assertThat(hand.overbetChips).hasSize(PokerConstants.SEATS);
-        assertThat(hand.winChips).hasSize(PokerConstants.SEATS);
-        assertThat(hand.startChips).hasSize(PokerConstants.SEATS);
-        assertThat(hand.endChips).hasSize(PokerConstants.SEATS);
+        assertThat(hand.players).hasSize(ProtocolConstants.SEATS);
+        assertThat(hand.betChips).hasSize(ProtocolConstants.SEATS);
+        assertThat(hand.overbetChips).hasSize(ProtocolConstants.SEATS);
+        assertThat(hand.winChips).hasSize(ProtocolConstants.SEATS);
+        assertThat(hand.startChips).hasSize(ProtocolConstants.SEATS);
+        assertThat(hand.endChips).hasSize(ProtocolConstants.SEATS);
     }
 
     @Test

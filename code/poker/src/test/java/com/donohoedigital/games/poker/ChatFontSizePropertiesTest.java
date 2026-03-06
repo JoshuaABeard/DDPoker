@@ -22,7 +22,6 @@ package com.donohoedigital.games.poker;
 import com.donohoedigital.config.ApplicationType;
 import com.donohoedigital.config.ConfigManager;
 import com.donohoedigital.config.PropertyConfig;
-import com.donohoedigital.games.poker.engine.PokerConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -44,7 +43,7 @@ class ChatFontSizePropertiesTest {
     @Test
     void should_HaveLabelProperty() {
         String label = PropertyConfig
-                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".label");
+                .getRequiredStringProperty("option." + PokerClientConstants.OPTION_CHAT_FONT_SIZE + ".label");
 
         assertThat(label).isNotNull().isNotEmpty().contains("Font Size");
     }
@@ -52,7 +51,7 @@ class ChatFontSizePropertiesTest {
     @Test
     void should_HaveDefaultProperty() {
         String defaultValue = PropertyConfig
-                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".default");
+                .getRequiredStringProperty("option." + PokerClientConstants.OPTION_CHAT_FONT_SIZE + ".default");
 
         assertThat(defaultValue).isNotNull().isEqualTo("12");
     }
@@ -60,7 +59,7 @@ class ChatFontSizePropertiesTest {
     @Test
     void should_HaveHelpProperty() {
         String help = PropertyConfig
-                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".help");
+                .getRequiredStringProperty("option." + PokerClientConstants.OPTION_CHAT_FONT_SIZE + ".help");
 
         assertThat(help).isNotNull().isNotEmpty().containsIgnoringCase("font size").containsIgnoringCase("chat");
     }
@@ -68,16 +67,16 @@ class ChatFontSizePropertiesTest {
     @Test
     void should_HaveDefaultValueMatchingConstant() {
         String defaultValue = PropertyConfig
-                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".default");
+                .getRequiredStringProperty("option." + PokerClientConstants.OPTION_CHAT_FONT_SIZE + ".default");
 
         int defaultInt = Integer.parseInt(defaultValue);
-        assertThat(defaultInt).isEqualTo(PokerConstants.DEFAULT_CHAT_FONT_SIZE);
+        assertThat(defaultInt).isEqualTo(PokerClientConstants.DEFAULT_CHAT_FONT_SIZE);
     }
 
     @Test
     void should_HaveHelpTextMentioningRange() {
         String help = PropertyConfig
-                .getRequiredStringProperty("option." + PokerConstants.OPTION_CHAT_FONT_SIZE + ".help");
+                .getRequiredStringProperty("option." + PokerClientConstants.OPTION_CHAT_FONT_SIZE + ".help");
 
         // Help should mention the valid range (8-24)
         assertThat(help).matches(".*\\b8-?24\\b.*");

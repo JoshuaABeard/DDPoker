@@ -20,7 +20,7 @@
 package com.donohoedigital.games.poker;
 
 import com.donohoedigital.config.*;
-import com.donohoedigital.games.poker.engine.*;
+import com.donohoedigital.games.poker.display.ClientCard;
 import org.junit.jupiter.api.*;
 
 import static org.assertj.core.api.Assertions.*;
@@ -56,25 +56,25 @@ class HandGroupTest {
     @Test
     void should_CopyGroup_WithPrototypeConstructor() {
         HandGroup original = new HandGroup("Original");
-        original.setContainsPair(Card.ACE, true);
-        original.setContainsSuited(Card.ACE, Card.KING, true);
+        original.setContainsPair(ClientCard.ACE, true);
+        original.setContainsSuited(ClientCard.ACE, ClientCard.KING, true);
 
         HandGroup copy = new HandGroup(original);
 
-        assertThat(copy.containsPair(Card.ACE)).isTrue();
-        assertThat(copy.containsSuited(Card.ACE, Card.KING)).isTrue();
+        assertThat(copy.containsPair(ClientCard.ACE)).isTrue();
+        assertThat(copy.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
         assertThat(copy.getClassCount()).isEqualTo(original.getClassCount());
     }
 
     @Test
     void should_CopyGroupWithNewName() {
         HandGroup original = new HandGroup("Original");
-        original.setContainsPair(Card.ACE, true);
+        original.setContainsPair(ClientCard.ACE, true);
 
         HandGroup copy = new HandGroup(original, "Copy");
 
         assertThat(copy.getName()).isEqualTo("Copy");
-        assertThat(copy.containsPair(Card.ACE)).isTrue();
+        assertThat(copy.containsPair(ClientCard.ACE)).isTrue();
     }
 
     // ========== Pair Tests ==========
@@ -83,9 +83,9 @@ class HandGroupTest {
     void should_AddPair() {
         HandGroup group = new HandGroup();
 
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
 
-        assertThat(group.containsPair(Card.ACE)).isTrue();
+        assertThat(group.containsPair(ClientCard.ACE)).isTrue();
         assertThat(group.getClassCount()).isEqualTo(1);
         assertThat(group.getHandCount()).isEqualTo(6); // 6 combinations of AA
     }
@@ -93,11 +93,11 @@ class HandGroupTest {
     @Test
     void should_RemovePair() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
 
-        group.setContainsPair(Card.ACE, false);
+        group.setContainsPair(ClientCard.ACE, false);
 
-        assertThat(group.containsPair(Card.ACE)).isFalse();
+        assertThat(group.containsPair(ClientCard.ACE)).isFalse();
         assertThat(group.getClassCount()).isZero();
         assertThat(group.getHandCount()).isZero();
     }
@@ -106,9 +106,9 @@ class HandGroupTest {
     void should_AddMultiplePairs() {
         HandGroup group = new HandGroup();
 
-        group.setContainsPair(Card.ACE, true);
-        group.setContainsPair(Card.KING, true);
-        group.setContainsPair(Card.QUEEN, true);
+        group.setContainsPair(ClientCard.ACE, true);
+        group.setContainsPair(ClientCard.KING, true);
+        group.setContainsPair(ClientCard.QUEEN, true);
 
         assertThat(group.getClassCount()).isEqualTo(3);
         assertThat(group.getHandCount()).isEqualTo(18); // 6 + 6 + 6
@@ -120,9 +120,9 @@ class HandGroupTest {
     void should_AddSuitedHand() {
         HandGroup group = new HandGroup();
 
-        group.setContainsSuited(Card.ACE, Card.KING, true);
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, true);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
         assertThat(group.getClassCount()).isEqualTo(1);
         assertThat(group.getHandCount()).isEqualTo(4); // 4 suited combinations
     }
@@ -131,20 +131,20 @@ class HandGroupTest {
     void should_HandleSuitedWithReversedRanks() {
         HandGroup group = new HandGroup();
 
-        group.setContainsSuited(Card.KING, Card.ACE, true);
+        group.setContainsSuited(ClientCard.KING, ClientCard.ACE, true);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isTrue();
-        assertThat(group.containsSuited(Card.KING, Card.ACE)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
+        assertThat(group.containsSuited(ClientCard.KING, ClientCard.ACE)).isTrue();
     }
 
     @Test
     void should_RemoveSuitedHand() {
         HandGroup group = new HandGroup();
-        group.setContainsSuited(Card.ACE, Card.KING, true);
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, true);
 
-        group.setContainsSuited(Card.ACE, Card.KING, false);
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, false);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isFalse();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isFalse();
         assertThat(group.getClassCount()).isZero();
     }
 
@@ -154,9 +154,9 @@ class HandGroupTest {
     void should_AddOffsuitHand() {
         HandGroup group = new HandGroup();
 
-        group.setContainsOffsuit(Card.ACE, Card.KING, true);
+        group.setContainsOffsuit(ClientCard.ACE, ClientCard.KING, true);
 
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isTrue();
         assertThat(group.getClassCount()).isEqualTo(1);
         assertThat(group.getHandCount()).isEqualTo(12); // 12 offsuit combinations
     }
@@ -165,20 +165,20 @@ class HandGroupTest {
     void should_HandleOffsuitWithReversedRanks() {
         HandGroup group = new HandGroup();
 
-        group.setContainsOffsuit(Card.KING, Card.ACE, true);
+        group.setContainsOffsuit(ClientCard.KING, ClientCard.ACE, true);
 
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isTrue();
-        assertThat(group.containsOffsuit(Card.KING, Card.ACE)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.KING, ClientCard.ACE)).isTrue();
     }
 
     @Test
     void should_TreatPairAsOffsuit_WhenSameRank() {
         HandGroup group = new HandGroup();
 
-        group.setContainsOffsuit(Card.ACE, Card.ACE, true);
+        group.setContainsOffsuit(ClientCard.ACE, ClientCard.ACE, true);
 
-        assertThat(group.containsPair(Card.ACE)).isTrue();
-        assertThat(group.containsOffsuit(Card.ACE, Card.ACE)).isTrue();
+        assertThat(group.containsPair(ClientCard.ACE)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.ACE)).isTrue();
     }
 
     // ========== Combined Contains Tests ==========
@@ -187,10 +187,10 @@ class HandGroupTest {
     void should_SetBothSuitedAndOffsuit_WithGenericContains() {
         HandGroup group = new HandGroup();
 
-        group.setContains(Card.ACE, Card.KING, true);
+        group.setContains(ClientCard.ACE, ClientCard.KING, true);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isTrue();
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isTrue();
         assertThat(group.getClassCount()).isEqualTo(2);
         // Note: Generic setContains updates classCount but not handCount
     }
@@ -199,19 +199,19 @@ class HandGroupTest {
     void should_SetPair_WithGenericContains() {
         HandGroup group = new HandGroup();
 
-        group.setContains(Card.ACE, Card.ACE, true);
+        group.setContains(ClientCard.ACE, ClientCard.ACE, true);
 
-        assertThat(group.containsPair(Card.ACE)).isTrue();
+        assertThat(group.containsPair(ClientCard.ACE)).isTrue();
     }
 
     @Test
     void should_SetSuitedOnly_WithSuitedFlag() {
         HandGroup group = new HandGroup();
 
-        group.setContains(Card.ACE, Card.KING, true, true);
+        group.setContains(ClientCard.ACE, ClientCard.KING, true, true);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isTrue();
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isFalse();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isFalse();
     }
 
     // ========== Count Tests ==========
@@ -222,13 +222,13 @@ class HandGroupTest {
 
         assertThat(group.getClassCount()).isZero();
 
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
         assertThat(group.getClassCount()).isEqualTo(1);
 
-        group.setContainsSuited(Card.ACE, Card.KING, true);
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, true);
         assertThat(group.getClassCount()).isEqualTo(2);
 
-        group.setContainsOffsuit(Card.ACE, Card.KING, true);
+        group.setContainsOffsuit(ClientCard.ACE, ClientCard.KING, true);
         assertThat(group.getClassCount()).isEqualTo(3);
     }
 
@@ -236,9 +236,9 @@ class HandGroupTest {
     void should_TrackHandCount_Correctly() {
         HandGroup group = new HandGroup();
 
-        group.setContainsPair(Card.ACE, true); // 6 hands
-        group.setContainsSuited(Card.ACE, Card.KING, true); // 4 hands
-        group.setContainsOffsuit(Card.ACE, Card.KING, true); // 12 hands
+        group.setContainsPair(ClientCard.ACE, true); // 6 hands
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, true); // 4 hands
+        group.setContainsOffsuit(ClientCard.ACE, ClientCard.KING, true); // 12 hands
 
         assertThat(group.getHandCount()).isEqualTo(22);
     }
@@ -246,7 +246,7 @@ class HandGroupTest {
     @Test
     void should_CalculatePercent_BasedOnHandCount() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true); // 6 hands
+        group.setContainsPair(ClientCard.ACE, true); // 6 hands
 
         double percent = group.getPercent();
 
@@ -258,7 +258,7 @@ class HandGroupTest {
     @Test
     void should_GenerateSummary_ForPairs() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
 
         String summary = group.getSummary();
 
@@ -268,7 +268,7 @@ class HandGroupTest {
     @Test
     void should_GenerateSummary_ForSuited() {
         HandGroup group = new HandGroup();
-        group.setContainsSuited(Card.ACE, Card.KING, true);
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, true);
 
         String summary = group.getSummary();
 
@@ -278,7 +278,7 @@ class HandGroupTest {
     @Test
     void should_GenerateSummary_ForOffsuit() {
         HandGroup group = new HandGroup();
-        group.setContainsOffsuit(Card.ACE, Card.KING, true);
+        group.setContainsOffsuit(ClientCard.ACE, ClientCard.KING, true);
 
         String summary = group.getSummary();
 
@@ -289,9 +289,9 @@ class HandGroupTest {
     @Test
     void should_GenerateSummary_WithRanges_ForConsecutivePairs() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
-        group.setContainsPair(Card.KING, true);
-        group.setContainsPair(Card.QUEEN, true);
+        group.setContainsPair(ClientCard.ACE, true);
+        group.setContainsPair(ClientCard.KING, true);
+        group.setContainsPair(ClientCard.QUEEN, true);
 
         String summary = group.getSummary();
 
@@ -301,7 +301,7 @@ class HandGroupTest {
     @Test
     void should_CacheSummary() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
 
         String summary1 = group.getSummary();
         String summary2 = group.getSummary();
@@ -312,10 +312,10 @@ class HandGroupTest {
     @Test
     void should_InvalidateSummary_WhenContentsChange() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
         String summary1 = group.getSummary();
 
-        group.setContainsPair(Card.KING, true);
+        group.setContainsPair(ClientCard.KING, true);
         String summary2 = group.getSummary();
 
         assertThat(summary1).isNotEqualTo(summary2);
@@ -326,7 +326,7 @@ class HandGroupTest {
     @Test
     void should_ExpandToHandList() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
 
         HandList expanded = group.expand();
 
@@ -337,7 +337,7 @@ class HandGroupTest {
     @Test
     void should_CacheExpandedHandList() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
 
         HandList expanded1 = group.expand();
         HandList expanded2 = group.expand();
@@ -348,10 +348,10 @@ class HandGroupTest {
     @Test
     void should_InvalidateExpanded_WhenContentsChange() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
         HandList expanded1 = group.expand();
 
-        group.setContainsPair(Card.KING, true);
+        group.setContainsPair(ClientCard.KING, true);
         HandList expanded2 = group.expand();
 
         assertThat(expanded1).isNotSameAs(expanded2);
@@ -364,7 +364,7 @@ class HandGroupTest {
     void should_ParseSimpleHand() {
         HandGroup group = HandGroup.parse("AKs", 5);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
         assertThat(group.getStrength()).isEqualTo(5);
     }
 
@@ -372,45 +372,45 @@ class HandGroupTest {
     void should_ParseOffsuitHand() {
         HandGroup group = HandGroup.parse("AK", 5);
 
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isTrue();
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isFalse();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isFalse();
     }
 
     @Test
     void should_ParsePair() {
         HandGroup group = HandGroup.parse("AA", 10);
 
-        assertThat(group.containsPair(Card.ACE)).isTrue();
+        assertThat(group.containsPair(ClientCard.ACE)).isTrue();
     }
 
     @Test
     void should_ParseMultipleHands() {
         HandGroup group = HandGroup.parse("AA,KK,AK", 5);
 
-        assertThat(group.containsPair(Card.ACE)).isTrue();
-        assertThat(group.containsPair(Card.KING)).isTrue();
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isTrue();
+        assertThat(group.containsPair(ClientCard.ACE)).isTrue();
+        assertThat(group.containsPair(ClientCard.KING)).isTrue();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isTrue();
     }
 
     @Test
     void should_ParseRange_ForPairs() {
         HandGroup group = HandGroup.parse("AA-QQ", 5);
 
-        assertThat(group.containsPair(Card.ACE)).isTrue();
-        assertThat(group.containsPair(Card.KING)).isTrue();
-        assertThat(group.containsPair(Card.QUEEN)).isTrue();
-        assertThat(group.containsPair(Card.JACK)).isFalse();
+        assertThat(group.containsPair(ClientCard.ACE)).isTrue();
+        assertThat(group.containsPair(ClientCard.KING)).isTrue();
+        assertThat(group.containsPair(ClientCard.QUEEN)).isTrue();
+        assertThat(group.containsPair(ClientCard.JACK)).isFalse();
     }
 
     @Test
     void should_ParseRange_ForSuited() {
         HandGroup group = HandGroup.parse("AKs-ATs", 5);
 
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isTrue();
-        assertThat(group.containsSuited(Card.ACE, Card.QUEEN)).isTrue();
-        assertThat(group.containsSuited(Card.ACE, Card.JACK)).isTrue();
-        assertThat(group.containsSuited(Card.ACE, Card.TEN)).isTrue();
-        assertThat(group.containsSuited(Card.ACE, Card.NINE)).isFalse();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.QUEEN)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.JACK)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.TEN)).isTrue();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.NINE)).isFalse();
     }
 
     // ========== HashCode/Equals Tests ==========
@@ -418,7 +418,7 @@ class HandGroupTest {
     @Test
     void should_GenerateHashCode() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
         group.setStrength(5);
 
         int hash = group.hashCode();
@@ -429,7 +429,7 @@ class HandGroupTest {
     @Test
     void should_CacheHashCode() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.ACE, true);
         group.setStrength(5);
 
         int hash1 = group.hashCode();
@@ -441,13 +441,13 @@ class HandGroupTest {
     @Test
     void should_InvalidateHashCode_WhenContentsChange() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.KING, true);
+        group.setContainsPair(ClientCard.KING, true);
         group.setStrength(5);
         int hash1 = group.hashCode();
 
         // Remove King and add Ace (higher rank) - should change hash
-        group.setContainsPair(Card.KING, false);
-        group.setContainsPair(Card.ACE, true);
+        group.setContainsPair(ClientCard.KING, false);
+        group.setContainsPair(ClientCard.ACE, true);
         int hash2 = group.hashCode();
 
         assertThat(hash1).isNotEqualTo(hash2);
@@ -475,17 +475,17 @@ class HandGroupTest {
     @Test
     void should_ClearAllContents() {
         HandGroup group = new HandGroup();
-        group.setContainsPair(Card.ACE, true);
-        group.setContainsSuited(Card.ACE, Card.KING, true);
-        group.setContainsOffsuit(Card.ACE, Card.KING, true);
+        group.setContainsPair(ClientCard.ACE, true);
+        group.setContainsSuited(ClientCard.ACE, ClientCard.KING, true);
+        group.setContainsOffsuit(ClientCard.ACE, ClientCard.KING, true);
 
         group.clearContents();
 
         assertThat(group.getClassCount()).isZero();
         assertThat(group.getHandCount()).isZero();
-        assertThat(group.containsPair(Card.ACE)).isFalse();
-        assertThat(group.containsSuited(Card.ACE, Card.KING)).isFalse();
-        assertThat(group.containsOffsuit(Card.ACE, Card.KING)).isFalse();
+        assertThat(group.containsPair(ClientCard.ACE)).isFalse();
+        assertThat(group.containsSuited(ClientCard.ACE, ClientCard.KING)).isFalse();
+        assertThat(group.containsOffsuit(ClientCard.ACE, ClientCard.KING)).isFalse();
     }
 
     // ========== GetAllHands Tests ==========
@@ -503,20 +503,20 @@ class HandGroupTest {
         HandGroup all = HandGroup.getAllHands();
 
         // Check all pairs
-        for (int rank = Card.TWO; rank <= Card.ACE; rank++) {
+        for (int rank = ClientCard.TWO; rank <= ClientCard.ACE; rank++) {
             assertThat(all.containsPair(rank)).isTrue();
         }
 
         // Check suited hands
-        for (int rank1 = Card.THREE; rank1 <= Card.ACE; rank1++) {
-            for (int rank2 = Card.TWO; rank2 < rank1; rank2++) {
+        for (int rank1 = ClientCard.THREE; rank1 <= ClientCard.ACE; rank1++) {
+            for (int rank2 = ClientCard.TWO; rank2 < rank1; rank2++) {
                 assertThat(all.containsSuited(rank1, rank2)).isTrue();
             }
         }
 
         // Check offsuit hands
-        for (int rank1 = Card.THREE; rank1 <= Card.ACE; rank1++) {
-            for (int rank2 = Card.TWO; rank2 < rank1; rank2++) {
+        for (int rank1 = ClientCard.THREE; rank1 <= ClientCard.ACE; rank1++) {
+            for (int rank2 = ClientCard.TWO; rank2 < rank1; rank2++) {
                 assertThat(all.containsOffsuit(rank1, rank2)).isTrue();
             }
         }
@@ -531,8 +531,8 @@ class HandGroupTest {
 
         group2.setContains(group1, true);
 
-        assertThat(group2.containsPair(Card.ACE)).isTrue();
-        assertThat(group2.containsPair(Card.KING)).isTrue();
+        assertThat(group2.containsPair(ClientCard.ACE)).isTrue();
+        assertThat(group2.containsPair(ClientCard.KING)).isTrue();
     }
 
     @Test
@@ -543,9 +543,9 @@ class HandGroupTest {
         HandGroup toRemove = HandGroup.parse("KK", 5);
         group2.setContains(toRemove, false);
 
-        assertThat(group2.containsPair(Card.ACE)).isTrue();
-        assertThat(group2.containsPair(Card.KING)).isFalse();
-        assertThat(group2.containsPair(Card.QUEEN)).isTrue();
+        assertThat(group2.containsPair(ClientCard.ACE)).isTrue();
+        assertThat(group2.containsPair(ClientCard.KING)).isFalse();
+        assertThat(group2.containsPair(ClientCard.QUEEN)).isTrue();
     }
 
     // ========== Utility Tests ==========

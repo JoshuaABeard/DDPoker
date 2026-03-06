@@ -19,11 +19,11 @@
  */
 package com.donohoedigital.games.poker.control;
 
-import com.donohoedigital.games.poker.engine.HandInfoFast;
 import com.donohoedigital.games.poker.HandHistoryPanel;
 import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.gameserver.HandEvaluationHelper;
 import com.donohoedigital.games.poker.gameserver.ServerGameTable;
+import com.donohoedigital.games.poker.protocol.dto.HandEvaluationData;
 import com.donohoedigital.games.poker.gameserver.ServerHand;
 import com.donohoedigital.games.poker.gameserver.ServerPlayer;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
@@ -89,13 +89,13 @@ class HandResultHandler extends BaseHandler {
         result.put("communityCards", cardsToDisplayList(communityCards));
         result.put("isUncontested", hand.isUncontested());
 
-        Hand communityHand = toHand(communityCards);
+        List<Card> communityCardList = communityCards != null ? List.of(communityCards) : List.of();
 
         // Build pot results from resolution data
         List<ServerHand.PotResolutionResult> resolutions = hand.getResolutionResults();
         List<Map<String, Object>> pots = new ArrayList<>();
         for (ServerHand.PotResolutionResult pr : resolutions) {
-            pots.add(buildPotResult(pr, hand, table, communityHand));
+            pots.add(buildPotResult(pr, hand, table, communityCardList));
         }
         result.put("pots", pots);
 
@@ -124,7 +124,7 @@ class HandResultHandler extends BaseHandler {
     }
 
     private Map<String, Object> buildPotResult(ServerHand.PotResolutionResult pr, ServerHand hand,
-            ServerGameTable table, Hand communityHand) {
+            ServerGameTable table, List<Card> communityCards) {
         Map<String, Object> potMap = new LinkedHashMap<>();
         potMap.put("potNumber", pr.potIndex());
         potMap.put("chipCount", pr.amount());
@@ -151,12 +151,10 @@ class HandResultHandler extends BaseHandler {
             winnerMap.put("holeCards", cardsToDisplayList(holeCards));
 
             // Evaluate hand for description
-            if (communityHand != null && communityHand.size() >= 3 && !holeCards.isEmpty()) {
-                Hand playerHand = toHand(holeCards);
-                HandInfoFast fast = new HandInfoFast();
-                int score = fast.getScore(playerHand, communityHand);
-                winnerMap.put("handDescription", HandHistoryPanel.handDesc(fast));
-                winnerMap.put("score", score);
+            if (communityCards != null && communityCards.size() >= 3 && !holeCards.isEmpty()) {
+                HandEvaluationData eval = HandEvaluationHelper.evaluate(holeCards, communityCards);
+                winnerMap.put("handDescription", HandHistoryPanel.handDesc(eval));
+                winnerMap.put("score", eval.score());
             }
 
             winnerMap.put("totalWin", share);
@@ -185,21 +183,4 @@ class HandResultHandler extends BaseHandler {
         return list;
     }
 
-    private Hand toHand(Card[] cards) {
-        if (cards == null || cards.length == 0) return null;
-        Hand hand = new Hand();
-        for (Card card : cards) {
-            hand.addCard(card);
-        }
-        return hand;
-    }
-
-    private Hand toHand(List<Card> cards) {
-        if (cards == null || cards.isEmpty()) return null;
-        Hand hand = new Hand();
-        for (Card card : cards) {
-            hand.addCard(card);
-        }
-        return hand;
-    }
 }
