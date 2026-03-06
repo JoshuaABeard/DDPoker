@@ -98,7 +98,17 @@ public class ProfileController {
     @PostMapping("/{id}/retire")
     public ResponseEntity<Map<String, Object>> retireProfile(@PathVariable("id") Long id) {
         Long authenticatedProfileId = getAuthenticatedProfileId();
-        if (!authenticatedProfileId.equals(id)) {
+        OnlineProfile authenticatedProfile = profileService.getProfile(authenticatedProfileId);
+        OnlineProfile targetProfile = profileService.getProfile(id);
+
+        if (authenticatedProfile == null || targetProfile == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Allow if same profile OR same email (alias)
+        boolean isOwner = authenticatedProfileId.equals(id);
+        boolean isSameEmailAlias = authenticatedProfile.getEmail().equalsIgnoreCase(targetProfile.getEmail());
+        if (!isOwner && !isSameEmailAlias) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

@@ -52,6 +52,8 @@ import com.donohoedigital.games.poker.protocol.dto.ResetPasswordRequest;
 import com.donohoedigital.games.poker.protocol.dto.UsernameCheckResponse;
 import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
+import com.donohoedigital.games.poker.gameserver.service.ProfileService;
+import com.donohoedigital.games.poker.protocol.dto.ChangePasswordRequest;
 
 /**
  * REST controller for authentication operations.
