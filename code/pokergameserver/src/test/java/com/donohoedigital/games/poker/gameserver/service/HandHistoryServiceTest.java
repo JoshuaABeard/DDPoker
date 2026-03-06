@@ -43,6 +43,10 @@ import com.donohoedigital.games.poker.gameserver.persistence.entity.HandPlayerEn
 import com.donohoedigital.games.poker.gameserver.persistence.repository.HandActionRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.HandHistoryRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.HandPlayerRepository;
+import com.donohoedigital.games.poker.protocol.dto.HandDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandExportData;
+import com.donohoedigital.games.poker.protocol.dto.HandStatsData;
+import com.donohoedigital.games.poker.protocol.dto.HandSummaryData;
 
 @ExtendWith(MockitoExtension.class)
 class HandHistoryServiceTest {
@@ -125,14 +129,22 @@ class HandHistoryServiceTest {
     void getHandSummaries_returnsPaginatedResults() {
         Pageable pageable = PageRequest.of(0, 10);
         HandHistoryEntity hand = new HandHistoryEntity();
+        hand.setId(1L);
         hand.setHandNumber(1);
+        hand.setCommunityCards("[\"Ac\",\"Kh\",\"Td\"]");
         Page<HandHistoryEntity> page = new PageImpl<>(List.of(hand), pageable, 1);
         when(handHistoryRepository.findByGameIdOrderByHandNumberDesc("game-1", pageable)).thenReturn(page);
 
-        Page<HandHistoryEntity> result = service.getHandSummaries("game-1", pageable);
+        HandPlayerEntity player = new HandPlayerEntity();
+        player.setHandId(1L);
+        player.setHoleCards("[\"Ac\",\"Kh\"]");
+        when(handPlayerRepository.findByHandIdIn(List.of(1L))).thenReturn(List.of(player));
+
+        Page<HandSummaryData> result = service.getHandSummaries("game-1", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getHandNumber()).isEqualTo(1);
+        assertThat(result.getContent().get(0).handNumber()).isEqualTo(1);
+        assertThat(result.getContent().get(0).holeCards()).containsExactly("Ac", "Kh");
     }
 
     @Test
@@ -140,32 +152,38 @@ class HandHistoryServiceTest {
         HandHistoryEntity hand = new HandHistoryEntity();
         hand.setId(10L);
         hand.setHandNumber(1);
+        hand.setCommunityCards("[\"Ac\",\"Kh\",\"Td\"]");
         when(handHistoryRepository.findByGameIdAndId("game-1", 10L)).thenReturn(Optional.of(hand));
 
         HandPlayerEntity player = new HandPlayerEntity();
         player.setHandId(10L);
         player.setPlayerId(1);
+        player.setPlayerName("Player1");
+        player.setHoleCards("[\"Ac\",\"Kh\"]");
         when(handPlayerRepository.findByHandId(10L)).thenReturn(List.of(player));
 
         HandActionEntity action = new HandActionEntity();
         action.setHandId(10L);
         action.setSequence(0);
+        action.setActionType("CALL");
         when(handActionRepository.findByHandIdOrderBySequenceAsc(10L)).thenReturn(List.of(action));
 
-        Optional<HandHistoryService.HandDetail> result = service.getHandDetail("game-1", 10L);
+        Optional<HandDetailData> result = service.getHandDetail("game-1", 10L);
 
         assertThat(result).isPresent();
-        HandHistoryService.HandDetail detail = result.get();
-        assertThat(detail.hand().getHandNumber()).isEqualTo(1);
+        HandDetailData detail = result.get();
+        assertThat(detail.handNumber()).isEqualTo(1);
         assertThat(detail.players()).hasSize(1);
+        assertThat(detail.players().get(0).playerName()).isEqualTo("Player1");
         assertThat(detail.actions()).hasSize(1);
+        assertThat(detail.actions().get(0).actionType()).isEqualTo("CALL");
     }
 
     @Test
     void getHandDetail_returnsEmptyWhenNotFound() {
         when(handHistoryRepository.findByGameIdAndId("game-1", 99L)).thenReturn(Optional.empty());
 
-        Optional<HandHistoryService.HandDetail> result = service.getHandDetail("game-1", 99L);
+        Optional<HandDetailData> result = service.getHandDetail("game-1", 99L);
 
         assertThat(result).isEmpty();
     }
@@ -192,7 +210,7 @@ class HandHistoryServiceTest {
         a2.setHandId(2L);
         when(handActionRepository.findByHandIdIn(List.of(1L, 2L))).thenReturn(List.of(a1, a2));
 
-        List<HandHistoryService.HandDetail> result = service.getHandsForExport("game-1");
+        List<HandExportData> result = service.getHandsForExport("game-1");
 
         assertThat(result).hasSize(2);
         assertThat(result.get(0).players()).hasSize(1);
@@ -205,10 +223,65 @@ class HandHistoryServiceTest {
     void getHandsForExport_returnsEmptyListWhenNoHands() {
         when(handHistoryRepository.findByGameId("game-empty")).thenReturn(List.of());
 
-        List<HandHistoryService.HandDetail> result = service.getHandsForExport("game-empty");
+        List<HandExportData> result = service.getHandsForExport("game-empty");
 
         assertThat(result).isEmpty();
         verifyNoInteractions(handPlayerRepository);
         verifyNoInteractions(handActionRepository);
+    }
+
+    @Test
+    void getHandStats_computesStatsByHandClass() {
+        HandHistoryEntity hand = new HandHistoryEntity();
+        hand.setId(1L);
+        hand.setCommunityCardsDealt(5);
+        when(handHistoryRepository.findByGameId("game-1")).thenReturn(List.of(hand));
+
+        HandPlayerEntity player = new HandPlayerEntity();
+        player.setHandId(1L);
+        player.setPlayerId(0);
+        player.setHoleCards("[\"Ac\",\"Kh\"]");
+        player.setStartChips(1000);
+        player.setEndChips(1200);
+        player.setCardsExposed(true);
+        when(handPlayerRepository.findByHandIdIn(List.of(1L))).thenReturn(List.of(player));
+
+        List<HandStatsData> result = service.getHandStats("game-1");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).handClass()).isEqualTo("AKo");
+        assertThat(result.get(0).count()).isEqualTo(1);
+        assertThat(result.get(0).winPct()).isEqualTo(100.0);
+    }
+
+    @Test
+    void getHandStats_returnsEmptyForNoHands() {
+        when(handHistoryRepository.findByGameId("game-empty")).thenReturn(List.of());
+
+        List<HandStatsData> result = service.getHandStats("game-empty");
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void parseCardJson_handlesVariousFormats() {
+        assertThat(HandHistoryService.parseCardJson(null)).isEmpty();
+        assertThat(HandHistoryService.parseCardJson("")).isEmpty();
+        assertThat(HandHistoryService.parseCardJson("[]")).isEmpty();
+        assertThat(HandHistoryService.parseCardJson("[\"Ac\",\"Kh\"]")).containsExactly("Ac", "Kh");
+        assertThat(HandHistoryService.parseCardJson("[\"Td\"]")).containsExactly("Td");
+    }
+
+    @Test
+    void getHandClass_computesCorrectly() {
+        // Pair
+        assertThat(HandHistoryService.getHandClass("Ac", "Ad")).isEqualTo("AA");
+        // Suited (higher rank first)
+        assertThat(HandHistoryService.getHandClass("Ac", "Kc")).isEqualTo("AKs");
+        // Offsuit (higher rank first)
+        assertThat(HandHistoryService.getHandClass("Ac", "Kh")).isEqualTo("AKo");
+        // Reversed order (lower card first)
+        assertThat(HandHistoryService.getHandClass("Kh", "Ac")).isEqualTo("AKo");
+        assertThat(HandHistoryService.getHandClass("9s", "Ts")).isEqualTo("T9s");
     }
 }
