@@ -145,6 +145,295 @@ class BorderPointTest {
         assertThat(point.getBorders()).hasSize(1);
     }
 
+    // ========== Remove Border Tests ==========
+
+    @Test
+    void should_RemoveBorder_When_RemoveBorderCalled() {
+        BorderPoint point = new BorderPoint(1, 2);
+        Border border = BorderTestHelper.createBorder("X", "Y");
+        point.addBorder(border);
+
+        point.removeBorder(border);
+
+        assertThat(point.getBorders()).isEmpty();
+    }
+
+    @Test
+    void should_RemoveFromAllBorders_When_RemoveFromAllBordersCalled() {
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        BorderPoint point = new BorderPoint(5, 5);
+        border1.addBorderPoint(point);
+        border2.addBorderPoint(point);
+
+        assertThat(point.getBorders()).hasSize(2);
+
+        point.removeFromAllBorders();
+
+        assertThat(point.getBorders()).isEmpty();
+        assertThat(border1.size()).isZero();
+        assertThat(border2.size()).isZero();
+    }
+
+    @Test
+    void should_RemoveFromSpecificBorder_When_RemoveFromBorderCalled() {
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        BorderPoint point = new BorderPoint(5, 5);
+        border1.addBorderPoint(point);
+        border2.addBorderPoint(point);
+
+        point.removeFromBorder(border1);
+
+        assertThat(border1.size()).isZero();
+        assertThat(border2.size()).isEqualTo(1);
+        assertThat(point.getBorders()).hasSize(1);
+    }
+
+    // ========== Current Border Tests ==========
+
+    @Test
+    void should_ReturnFirstBorder_When_GetCurrentBorderCalledWithoutSetting() {
+        BorderPoint point = new BorderPoint(1, 2);
+        Border border = BorderTestHelper.createBorder("X", "Y");
+        point.addBorder(border);
+
+        assertThat(point.getCurrentBorder()).isSameAs(border);
+    }
+
+    @Test
+    void should_ReturnNull_When_GetCurrentBorderCalledOnOrphanPoint() {
+        BorderPoint point = new BorderPoint(1, 2);
+
+        assertThat(point.getCurrentBorder()).isNull();
+    }
+
+    @Test
+    void should_SetCurrentBorder_When_SetCurrentBorderCalledWithValidBorder() {
+        BorderPoint point = new BorderPoint(1, 2);
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        point.addBorder(border1);
+        point.addBorder(border2);
+
+        point.setCurrentBorder(border2);
+
+        assertThat(point.getCurrentBorder()).isSameAs(border2);
+    }
+
+    @Test
+    void should_ClearCurrentBorder_When_RemovedBorderWasCurrent() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint point = new BorderPoint(1, 2);
+        border.addBorderPoint(point);
+        point.setCurrentBorder(border);
+
+        point.removeBorder(border);
+
+        // After removal, getCurrentBorder returns null since no borders remain
+        assertThat(point.getCurrentBorder()).isNull();
+    }
+
+    // ========== Next Border Tests ==========
+
+    @Test
+    void should_CycleThroughBorders_When_NextBorderCalled() {
+        BorderPoint point = new BorderPoint(1, 2);
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        point.addBorder(border1);
+        point.addBorder(border2);
+        point.setCurrentBorder(border1);
+
+        Border next = point.nextBorder();
+
+        assertThat(next).isSameAs(border2);
+    }
+
+    @Test
+    void should_WrapAround_When_NextBorderCalledOnLastBorder() {
+        BorderPoint point = new BorderPoint(1, 2);
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        point.addBorder(border1);
+        point.addBorder(border2);
+        point.setCurrentBorder(border2);
+
+        Border next = point.nextBorder();
+
+        assertThat(next).isSameAs(border1);
+    }
+
+    // ========== Navigation Tests ==========
+
+    @Test
+    void should_ReturnNextPoint_When_GetNextPointCalled() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        BorderPoint p3 = new BorderPoint(3, 3);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        border.addBorderPoint(p3);
+        p2.setCurrentBorder(border);
+
+        assertThat(p2.getNextPoint()).isSameAs(p3);
+    }
+
+    @Test
+    void should_WrapToFirst_When_GetNextPointCalledOnLastPoint() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        p2.setCurrentBorder(border);
+
+        assertThat(p2.getNextPoint()).isSameAs(p1);
+    }
+
+    @Test
+    void should_ReturnPrevPoint_When_GetPrevPointCalled() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        BorderPoint p3 = new BorderPoint(3, 3);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        border.addBorderPoint(p3);
+        p2.setCurrentBorder(border);
+
+        assertThat(p2.getPrevPoint()).isSameAs(p1);
+    }
+
+    @Test
+    void should_WrapToLast_When_GetPrevPointCalledOnFirstPoint() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        p1.setCurrentBorder(border);
+
+        assertThat(p1.getPrevPoint()).isSameAs(p2);
+    }
+
+    @Test
+    void should_ReturnAdjacentPoint_When_GetNearestPointCalled() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        BorderPoint p3 = new BorderPoint(3, 3);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        border.addBorderPoint(p3);
+        p2.setCurrentBorder(border);
+
+        // For delete nav, middle point returns previous point
+        assertThat(p2.getNearestPoint()).isSameAs(p1);
+    }
+
+    @Test
+    void should_ReturnSecondPoint_When_GetNearestPointCalledOnFirstPoint() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        p1.setCurrentBorder(border);
+
+        // For delete nav at index 0, returns point at index 1
+        assertThat(p1.getNearestPoint()).isSameAs(p2);
+    }
+
+    @Test
+    void should_ReturnNull_When_GetNearestPointCalledOnSinglePointBorder() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        border.addBorderPoint(p1);
+        p1.setCurrentBorder(border);
+
+        assertThat(p1.getNearestPoint()).isNull();
+    }
+
+    @Test
+    void should_ReturnSelf_When_GetNextPointCalledOnSinglePointBorder() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        border.addBorderPoint(p1);
+        p1.setCurrentBorder(border);
+
+        assertThat(p1.getNextPoint()).isSameAs(p1);
+    }
+
+    // ========== Shift Tests ==========
+
+    @Test
+    void should_MovePointUp_When_ShiftUpCalled() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        BorderPoint p3 = new BorderPoint(3, 3);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        border.addBorderPoint(p3);
+        p2.setCurrentBorder(border);
+
+        p2.shift(true); // shift up (toward higher index)
+
+        assertThat(border.getBorderPoint(0)).isSameAs(p1);
+        assertThat(border.getBorderPoint(1)).isSameAs(p3);
+        assertThat(border.getBorderPoint(2)).isSameAs(p2);
+    }
+
+    @Test
+    void should_MovePointDown_When_ShiftDownCalled() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        BorderPoint p3 = new BorderPoint(3, 3);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        border.addBorderPoint(p3);
+        p2.setCurrentBorder(border);
+
+        p2.shift(false); // shift down (toward lower index)
+
+        assertThat(border.getBorderPoint(0)).isSameAs(p2);
+        assertThat(border.getBorderPoint(1)).isSameAs(p1);
+        assertThat(border.getBorderPoint(2)).isSameAs(p3);
+    }
+
+    @Test
+    void should_WrapToBeginning_When_ShiftUpFromLastPosition() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        p2.setCurrentBorder(border);
+
+        p2.shift(true); // shift up from last position wraps to beginning
+
+        assertThat(border.getBorderPoint(0)).isSameAs(p2);
+        assertThat(border.getBorderPoint(1)).isSameAs(p1);
+    }
+
+    @Test
+    void should_WrapToEnd_When_ShiftDownFromFirstPosition() {
+        Border border = BorderTestHelper.createBorder("A", "B");
+        BorderPoint p1 = new BorderPoint(1, 1);
+        BorderPoint p2 = new BorderPoint(2, 2);
+        border.addBorderPoint(p1);
+        border.addBorderPoint(p2);
+        p1.setCurrentBorder(border);
+
+        p1.shift(false); // shift down from first position wraps to end
+
+        assertThat(border.getBorderPoint(0)).isSameAs(p2);
+        assertThat(border.getBorderPoint(1)).isSameAs(p1);
+    }
+
     // ========== toString / longDesc Tests ==========
 
     @Test
@@ -152,5 +441,44 @@ class BorderPointTest {
         BorderPoint point = new BorderPoint(42, 99);
 
         assertThat(point.toString()).contains("42").contains("99");
+    }
+
+    @Test
+    void should_IncludeSharedBorderInfo_When_LongDescCalledWithNullBorderAndMultipleBorders() {
+        BorderPoint point = new BorderPoint(5, 10);
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        point.addBorder(border1);
+        point.addBorder(border2);
+
+        String desc = point.longDesc(null);
+
+        assertThat(desc).contains("(5,10)");
+        assertThat(desc).contains("used in:");
+    }
+
+    @Test
+    void should_IncludeSharedWithInfo_When_LongDescCalledWithSpecificBorder() {
+        BorderPoint point = new BorderPoint(5, 10);
+        Border border1 = BorderTestHelper.createBorder("A", "B");
+        Border border2 = BorderTestHelper.createBorder("C", "D");
+        point.addBorder(border1);
+        point.addBorder(border2);
+
+        String desc = point.longDesc(border1);
+
+        assertThat(desc).contains("(5,10)");
+        assertThat(desc).contains("Shared with:");
+    }
+
+    @Test
+    void should_OnlyShowCoordinates_When_LongDescCalledWithSingleBorder() {
+        BorderPoint point = new BorderPoint(5, 10);
+        Border border = BorderTestHelper.createBorder("A", "B");
+        point.addBorder(border);
+
+        String desc = point.longDesc(border);
+
+        assertThat(desc).isEqualTo("(5,10)");
     }
 }
