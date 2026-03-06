@@ -233,6 +233,83 @@ class EngineMessageTest {
     }
 
     @Test
+    void should_ReturnGetGameState_When_CategoryIsGetGameState() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_GET_GAME_STATE);
+
+        assertThat(msg.getDebugCat()).isEqualTo("get game state");
+    }
+
+    @Test
+    void should_ReturnActionDone_When_CategoryIsActionDone() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_ACTION_DONE);
+
+        assertThat(msg.getDebugCat()).isEqualTo("action done");
+    }
+
+    @Test
+    void should_ReturnInfo_When_CategoryIsInfo() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_INFO);
+
+        assertThat(msg.getDebugCat()).isEqualTo("info");
+    }
+
+    @Test
+    void should_ReturnActionRequest_When_CategoryIsActionRequest() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_ACTION_REQUEST);
+
+        assertThat(msg.getDebugCat()).isEqualTo("action request");
+    }
+
+    @Test
+    void should_ReturnPlayerUpdate_When_CategoryIsPlayerUpdate() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_PLAYER_UPDATE);
+
+        assertThat(msg.getDebugCat()).isEqualTo("player update");
+    }
+
+    @Test
+    void should_ReturnStatus_When_CategoryIsStatus() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_STATUS);
+
+        assertThat(msg.getDebugCat()).isEqualTo("status");
+    }
+
+    @Test
+    void should_ReturnPublicIp_When_CategoryIsPublicIp() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_PUBLIC_IP);
+
+        assertThat(msg.getDebugCat()).isEqualTo("public ip");
+    }
+
+    @Test
+    void should_ReturnCheckDDMsg_When_CategoryIsCheckDDMsg() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_CHECK_DDMSG);
+
+        assertThat(msg.getDebugCat()).isEqualTo("check DD msg");
+    }
+
+    @Test
+    void should_ReturnGameData_When_CategoryIsGameData() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_GAME_DATA);
+
+        assertThat(msg.getDebugCat()).isEqualTo("game data");
+    }
+
+    @Test
+    void should_ReturnGameUpdate_When_CategoryIsGameUpdate() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_GAME_UPDATE);
+
+        assertThat(msg.getDebugCat()).isEqualTo("game update");
+    }
+
+    @Test
+    void should_ReturnJoinEmail_When_CategoryIsEmailJoinGame() {
+        EngineMessage msg = new EngineMessage("game", 1, EngineMessage.CAT_EMAIL_JOIN_GAME);
+
+        assertThat(msg.getDebugCat()).isEqualTo("join email");
+    }
+
+    @Test
     void should_ReturnCategoryNumber_When_CategoryUnknown() {
         EngineMessage msg = new EngineMessage("game", 1, 9999);
 
