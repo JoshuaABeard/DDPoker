@@ -46,7 +46,7 @@ test.describe('Game creation & lobby', () => {
   test('navigate to create game page', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games')
-    await page.getByRole('link', { name: /create game/i }).click()
+    await page.getByRole('link', { name: /create game/i }).or(page.getByRole('button', { name: /create game/i })).click()
     await expect(page).toHaveURL(/\/games\/create/)
   })
 
@@ -63,50 +63,50 @@ test.describe('Game creation & lobby', () => {
   test('create practice game with custom settings', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
-    const nameInput = page.getByLabel(/game name|name/i).first()
+    const nameInput = page.getByLabel(/game name/i).first()
     if (await nameInput.isVisible()) {
       await nameInput.fill('My Test Game')
     }
-    await page.getByRole('button', { name: /create game|start game|create practice/i }).first().click()
+    await page.getByRole('button', { name: /start practice game/i }).click()
     await expect(page).toHaveURL(/\/games\/.*\/(play|lobby)/, { timeout: 15_000 })
   })
 
   test('games page shows tabs and search', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games')
-    await expect(page.getByText(/game lobby/i)).toBeVisible()
-    await expect(page.getByRole('button', { name: /open/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /in progress/i })).toBeVisible()
-    await expect(page.getByRole('button', { name: /completed/i })).toBeVisible()
-    await expect(page.getByLabel(/search/i)).toBeVisible()
+    await expect(page.getByText('Game Lobby')).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'In Progress' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible()
+    await expect(page.getByLabel('Search games')).toBeVisible()
   })
 
   test('tab switching filters games', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games')
-    await page.getByRole('button', { name: /in progress/i }).click()
-    await expect(page.getByText(/error|failed/i)).not.toBeVisible()
-    await page.getByRole('button', { name: /completed/i }).click()
-    await expect(page.getByText(/error|failed/i)).not.toBeVisible()
-    await page.getByRole('button', { name: /open/i }).click()
-    await expect(page.getByText(/error|failed/i)).not.toBeVisible()
+    await page.getByRole('button', { name: 'In Progress' }).click()
+    await expect(page.getByRole('alert')).not.toBeVisible()
+    await page.getByRole('button', { name: 'Completed' }).click()
+    await expect(page.getByRole('alert')).not.toBeVisible()
+    await page.getByRole('button', { name: 'Open' }).click()
+    await expect(page.getByRole('alert')).not.toBeVisible()
   })
 
   test('no games shows empty state', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games')
-    await expect(page.getByText(/no games found/i)).toBeVisible()
+    await expect(page.getByText('No games found.')).toBeVisible()
   })
 
   test('create game page has blind structure options', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
-    await expect(page.getByText(/blind|structure/i).first()).toBeVisible()
+    await expect(page.getByText('Blind Structure')).toBeVisible()
   })
 
   test('create game page has AI player options', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
-    await expect(page.getByText(/ai|opponent|player/i).first()).toBeVisible()
+    await expect(page.getByText('AI Opponents')).toBeVisible()
   })
 })

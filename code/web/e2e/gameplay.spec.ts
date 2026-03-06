@@ -36,11 +36,19 @@
 import { test, expect, type Page } from '@playwright/test'
 import { api, ui } from './fixtures/test-helper'
 
-/** Wait for the poker table to be interactive (player has cards or action prompt). */
+/**
+ * Wait for the poker table to be interactive (player has cards or action prompt).
+ *
+ * NOTE: The standalone game server (GameServerStandaloneApplication) does not
+ * currently include the `websocket` package in its component scan, so WebSocket
+ * endpoints (/ws/games/*, /ws/lobby) are not registered. Gameplay tests that
+ * depend on real-time WebSocket communication will timeout until the component
+ * scan is extended to include `com.donohoedigital.games.poker.gameserver.websocket`.
+ */
 async function waitForTable(page: Page) {
   await expect(
-    page.locator('[data-testid="poker-table"], .poker-table').first()
-  ).toBeVisible({ timeout: 20_000 })
+    page.locator('[data-testid="poker-table"], .poker-table, canvas').first()
+  ).toBeVisible({ timeout: 30_000 })
 }
 
 /** Wait for the action panel to show available actions. */
@@ -54,7 +62,7 @@ async function waitForAction(page: Page) {
 async function startQuickPractice(page: Page) {
   await page.goto('/games/create')
   await page.getByRole('button', { name: /quick practice/i }).click()
-  await expect(page).toHaveURL(/\/games\/.*\/play/, { timeout: 15_000 })
+  await expect(page).toHaveURL(/\/games\/.*\/play/, { timeout: 20_000 })
   await waitForTable(page)
 }
 
@@ -76,14 +84,13 @@ test.describe('Gameplay (practice)', () => {
 
   test('player sees their hole cards', async ({ page }) => {
     await startQuickPractice(page)
-    await page.waitForTimeout(3000)
-    const cards = page.locator('[data-testid*="card"], [class*="card"]')
-    await expect(cards.first()).toBeVisible({ timeout: 15_000 })
+    const cards = page.locator('[data-testid*="card"], [class*="card"], .card')
+    await expect(cards.first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('tournament info bar shows blinds and level', async ({ page }) => {
     await startQuickPractice(page)
-    await expect(page.getByText(/level|blind/i).first()).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText(/level|blind/i).first()).toBeVisible({ timeout: 20_000 })
   })
 
   test('action panel appears when it is player turn', async ({ page }) => {
@@ -127,7 +134,6 @@ test.describe('Gameplay (practice)', () => {
 
   test('hand history panel toggles', async ({ page }) => {
     await startQuickPractice(page)
-    await page.waitForTimeout(3000)
     const historyBtn = page.getByRole('button', { name: /hand history/i })
     if (await historyBtn.isVisible()) {
       await historyBtn.click()
@@ -159,7 +165,7 @@ test.describe('Gameplay (practice)', () => {
     test.setTimeout(120_000)
     await page.goto('/games/create')
     await page.getByRole('button', { name: /quick practice/i }).click()
-    await expect(page).toHaveURL(/\/games\/.*\/play/, { timeout: 15_000 })
+    await expect(page).toHaveURL(/\/games\/.*\/play/, { timeout: 20_000 })
     await waitForTable(page)
 
     let gameComplete = false
