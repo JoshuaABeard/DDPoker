@@ -40,6 +40,7 @@ import com.donohoedigital.games.poker.protocol.dto.RequestEmailChangeResponse;
 import com.donohoedigital.games.poker.protocol.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
+import com.donohoedigital.games.poker.gameserver.service.ProfileService;
 
 @WebMvcTest
 @Import({TestSecurityConfiguration.class, AuthController.class, AuthControllerTest.TestConfig.class})
@@ -50,6 +51,9 @@ class AuthControllerTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private ProfileService profileService;
 
     static class TestConfig {
         @Bean
@@ -189,5 +193,29 @@ class AuthControllerTest {
 
         mockMvc.perform(get("/api/v1/auth/check-username").param("username", "takenuser")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.available").value(false));
+    }
+
+    @Test
+    void changePassword_success_returns200() throws Exception {
+        doNothing().when(profileService).changePassword(eq(1L), eq("oldpass"), eq("newpass123"));
+
+        mockMvc.perform(put("/api/v1/auth/password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"oldPassword\":\"oldpass\",\"newPassword\":\"newpass123\"}")).andExpect(status().isOk());
+    }
+
+    @Test
+    void changePassword_wrongOldPassword_returns403() throws Exception {
+        doThrow(new ProfileService.InvalidPasswordException()).when(profileService).changePassword(eq(1L),
+                eq("wrongpass"), eq("newpass123"));
+
+        mockMvc.perform(put("/api/v1/auth/password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"oldPassword\":\"wrongpass\",\"newPassword\":\"newpass123\"}"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void changePassword_shortPassword_returns400() throws Exception {
+        mockMvc.perform(put("/api/v1/auth/password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"oldPassword\":\"oldpass\",\"newPassword\":\"short\"}")).andExpect(status().isBadRequest());
     }
 }

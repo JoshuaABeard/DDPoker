@@ -63,11 +63,14 @@ import com.donohoedigital.games.poker.protocol.dto.ChangePasswordRequest;
 public class AuthController {
 
     private final AuthService authService;
+    private final ProfileService profileService;
     private final String cookieName;
     private final Environment environment;
 
-    public AuthController(AuthService authService, JwtProperties jwtProperties, Environment environment) {
+    public AuthController(AuthService authService, ProfileService profileService, JwtProperties jwtProperties,
+            Environment environment) {
         this.authService = authService;
+        this.profileService = profileService;
         this.cookieName = jwtProperties.getCookieName();
         this.environment = environment;
     }
@@ -255,6 +258,31 @@ public class AuthController {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.badRequest().body(result);
+        }
+    }
+
+    /**
+     * Change the authenticated user's password.
+     *
+     * <p>
+     * Requires the current password for verification. Returns 403 if the old
+     * password is incorrect, 400 if the new password fails validation.
+     */
+    @PutMapping("/password")
+    public ResponseEntity<Void> changePassword(@RequestBody ChangePasswordRequest request) {
+        if (isBlank(request.oldPassword())) {
+            return ResponseEntity.badRequest().build();
+        }
+        if (isBlank(request.newPassword()) || request.newPassword().length() < 8
+                || request.newPassword().length() > 128) {
+            return ResponseEntity.badRequest().build();
+        }
+        Long profileId = getAuthenticatedProfileId();
+        try {
+            profileService.changePassword(profileId, request.oldPassword(), request.newPassword());
+            return ResponseEntity.ok().build();
+        } catch (ProfileService.InvalidPasswordException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 
