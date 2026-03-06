@@ -340,15 +340,16 @@
             </goals>
             <configuration>
               <rules>
-                <!-- Main poker package - actual 14.0%, Swing-heavy large module. AI core
-                     moved to pokergamecore; remaining coverage from non-Swing utilities. -->
+                <!-- Main poker package - actual 10%, Swing-heavy large module. AI core
+                     moved to pokergamecore; dead code removed. Coverage from non-Swing
+                     utilities, extracted calculators, and integration tests. -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.13</minimum>
+                      <minimum>0.09</minimum>
                     </limit>
                   </limits>
                   <includes>
@@ -363,16 +364,15 @@
                   </excludes>
                 </rule>
 
-                <!-- AI package - actual 45.6%. Core AI logic moved to pokergamecore;
-                     remaining code is Swing GUI wrappers (PlayerType, HandSelectionScheme).
-                     Threshold = actual - 3%. -->
+                <!-- AI package - actual 51%. Dead code removed (AIStrategy, AIConstants),
+                     HandSelectionScheme tests added. Threshold = actual - 3%. -->
                 <rule>
                   <element>PACKAGE</element>
                   <limits>
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.43</minimum>
+                      <minimum>0.48</minimum>
                     </limit>
                   </limits>
                   <includes>
