@@ -306,6 +306,14 @@ class ControlServerClient {
         return MAPPER.readTree(resp.body());
     }
 
+    private JsonNode putJson(String path, JsonNode body) throws Exception {
+        String json = MAPPER.writeValueAsString(body);
+        HttpRequest req = HttpRequest.newBuilder().uri(URI.create(baseUrl + path)).header(HEADER_KEY, apiKey)
+                .header(HEADER_CONTENT_TYPE, APPLICATION_JSON).PUT(HttpRequest.BodyPublishers.ofString(json)).build();
+        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        return MAPPER.readTree(resp.body());
+    }
+
     // -------------------------------------------------------------------------
     // Online game management
     // -------------------------------------------------------------------------
@@ -345,6 +353,69 @@ class ControlServerClient {
      */
     public JsonNode onlineJoin(String gameId) throws Exception {
         return postJson("/online/join", MAPPER.createObjectNode().put("gameId", gameId));
+    }
+
+    /**
+     * POST /online/register — register a new user on the game server.
+     */
+    public JsonNode onlineRegister(String serverUrl, String username, String password, String email) throws Exception {
+        return postJson("/online/register", MAPPER.createObjectNode().put("serverUrl", serverUrl)
+                .put("username", username).put("password", password).put("email", email));
+    }
+
+    /**
+     * GET /online/games — list available games on the server.
+     */
+    public JsonNode onlineGames() throws Exception {
+        return getJson("/online/games");
+    }
+
+    /**
+     * POST /online/observe — start observing a game as a spectator.
+     */
+    public JsonNode onlineObserve(String gameId) throws Exception {
+        return postJson("/online/observe", MAPPER.createObjectNode().put("gameId", gameId));
+    }
+
+    /**
+     * POST /online/lobby/kick — kick a player from the lobby (host only).
+     */
+    public JsonNode onlineLobbyKick(long profileId) throws Exception {
+        return postJson("/online/lobby/kick", MAPPER.createObjectNode().put("profileId", profileId));
+    }
+
+    /**
+     * PUT /online/lobby/settings — update game settings in the lobby (host only).
+     */
+    public JsonNode onlineLobbySettings(String name, Integer maxPlayers) throws Exception {
+        ObjectNode body = MAPPER.createObjectNode();
+        if (name != null)
+            body.put("name", name);
+        if (maxPlayers != null)
+            body.put("maxPlayers", maxPlayers);
+        return putJson("/online/lobby/settings", body);
+    }
+
+    /**
+     * POST /account/password — change the user's password.
+     */
+    public JsonNode accountChangePassword(String oldPassword, String newPassword) throws Exception {
+        return postJson("/account/password",
+                MAPPER.createObjectNode().put("oldPassword", oldPassword).put("newPassword", newPassword));
+    }
+
+    /**
+     * PUT /account/email — request an email address change.
+     */
+    public JsonNode accountChangeEmail(String newEmail) throws Exception {
+        return putJson("/account/email", MAPPER.createObjectNode().put("newEmail", newEmail));
+    }
+
+    /**
+     * GET /account/profile — get the current user's profile.
+     */
+    public JsonNode accountProfile() throws Exception {
+        return getJson("/account/profile");
     }
 
     /**

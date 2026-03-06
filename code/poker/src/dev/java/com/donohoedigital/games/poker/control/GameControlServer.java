@@ -212,6 +212,14 @@ public class GameControlServer {
         server.createContext("/online/lobby",  new OnlineLobbyHandler(apiKey));
         server.createContext("/online/start",  new OnlineStartHandler(apiKey));
         server.createContext("/online/join",   new OnlineJoinHandler(apiKey));
+        server.createContext("/online/register", new OnlineRegisterHandler(apiKey));
+        server.createContext("/online/games",    new OnlineGamesHandler(apiKey));
+        server.createContext("/online/observe",  new OnlineObserveHandler(apiKey));
+        server.createContext("/online/lobby/kick",     new OnlineLobbyKickHandler(apiKey));
+        server.createContext("/online/lobby/settings", new OnlineLobbySettingsHandler(apiKey));
+        server.createContext("/account/password", new AccountPasswordHandler(apiKey));
+        server.createContext("/account/email",    new AccountEmailHandler(apiKey));
+        server.createContext("/account/profile",  new AccountProfileHandler(apiKey));
 
         server.start();
 
