@@ -48,7 +48,21 @@ export default defineConfig({
     screenshot: 'only-on-failure',
     video: 'off',
   },
-  projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
+  projects: [{
+    name: 'chromium',
+    use: {
+      browserName: 'chromium',
+      launchOptions: {
+        args: [
+          // The E2E setup runs the game server on port 8877 and Next.js on port 3000.
+          // Chromium's Private Network Access (PNA) blocks cross-origin fetch from
+          // one localhost port to another after a full-page navigation. This flag
+          // disables PNA so the AuthProvider can call /auth/me on port 8877.
+          '--disable-features=PrivateNetworkAccessForNavigations,PrivateNetworkAccessRespectPreflightResults',
+        ],
+      },
+    },
+  }],
   globalSetup: './global-setup.ts',
   globalTeardown: './global-teardown.ts',
 })

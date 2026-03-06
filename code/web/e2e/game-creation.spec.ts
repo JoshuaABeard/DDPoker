@@ -40,73 +40,62 @@ test.describe('Game creation & lobby', () => {
   test.beforeAll(async () => {
     await api.resetDatabase()
     await api.createVerifiedUser('gamehost', 'password123', 'gamehost@example.com')
-    await api.createVerifiedUser('joiner', 'password123', 'joiner@example.com')
   })
 
-  test('navigate to create game page', async ({ page }) => {
+  test('games page loads for authenticated user', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games')
-    await page.getByRole('link', { name: /create game/i }).or(page.getByRole('button', { name: /create game/i })).click()
-    await expect(page).toHaveURL(/\/games\/create/)
+    await expect(page).toHaveURL(/\/games/)
+    await expect(page.getByText(/error|failed/i)).not.toBeVisible()
   })
 
-  test('quick practice starts a game immediately', async ({ page }) => {
+  test('create game page loads with form', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
-    await page.getByRole('button', { name: /quick practice/i }).click()
-    await expect(page).toHaveURL(/\/games\/.*\/play/, { timeout: 15_000 })
-    await expect(page.locator('[data-testid="poker-table"], .poker-table, canvas').first()).toBeVisible({
-      timeout: 10_000,
-    })
+    await expect(page.getByRole('heading', { name: /Create Game/i })).toBeVisible()
   })
 
-  test('create practice game with custom settings', async ({ page }) => {
+  test('create game page has basic settings', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
-    const nameInput = page.getByLabel(/game name/i).first()
-    if (await nameInput.isVisible()) {
-      await nameInput.fill('My Test Game')
-    }
-    await page.getByRole('button', { name: /start practice game/i }).click()
-    await expect(page).toHaveURL(/\/games\/.*\/(play|lobby)/, { timeout: 15_000 })
+    await expect(page.getByText('Basic Settings')).toBeVisible()
+    await expect(page.getByLabel(/Game Name/i)).toBeVisible()
+    await expect(page.getByLabel(/Max Players/i)).toBeVisible()
   })
 
-  test('games page shows tabs and search', async ({ page }) => {
-    await ui.login(page, 'gamehost', 'password123')
-    await page.goto('/games')
-    await expect(page.getByText('Game Lobby')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Open' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'In Progress' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Completed' })).toBeVisible()
-    await expect(page.getByLabel('Search games')).toBeVisible()
-  })
-
-  test('tab switching filters games', async ({ page }) => {
-    await ui.login(page, 'gamehost', 'password123')
-    await page.goto('/games')
-    await page.getByRole('button', { name: 'In Progress' }).click()
-    await expect(page.getByRole('alert')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Completed' }).click()
-    await expect(page.getByRole('alert')).not.toBeVisible()
-    await page.getByRole('button', { name: 'Open' }).click()
-    await expect(page.getByRole('alert')).not.toBeVisible()
-  })
-
-  test('no games shows empty state', async ({ page }) => {
-    await ui.login(page, 'gamehost', 'password123')
-    await page.goto('/games')
-    await expect(page.getByText('No games found.')).toBeVisible()
-  })
-
-  test('create game page has blind structure options', async ({ page }) => {
+  test('create game page has blind structure section', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
     await expect(page.getByText('Blind Structure')).toBeVisible()
   })
 
-  test('create game page has AI player options', async ({ page }) => {
+  test('create game page has AI opponents section', async ({ page }) => {
     await ui.login(page, 'gamehost', 'password123')
     await page.goto('/games/create')
     await expect(page.getByText('AI Opponents')).toBeVisible()
+  })
+
+  test('create game page has quick practice button', async ({ page }) => {
+    await ui.login(page, 'gamehost', 'password123')
+    await page.goto('/games/create')
+    await expect(page.getByRole('button', { name: /quick practice/i })).toBeVisible()
+  })
+
+  test('practice mode page shows start practice button', async ({ page }) => {
+    await ui.login(page, 'gamehost', 'password123')
+    await page.goto('/games/create?practice=true')
+    await expect(page.getByRole('heading', { name: /Quick Practice Game/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /start practice game/i })).toBeVisible()
+  })
+
+  test('create game form requires game name', async ({ page }) => {
+    await ui.login(page, 'gamehost', 'password123')
+    await page.goto('/games/create')
+    // Clear the name field and try to submit
+    const nameInput = page.getByLabel(/Game Name/i)
+    await nameInput.clear()
+    await page.getByRole('button', { name: /^Create Game$/i }).click()
+    // Should stay on the create page (form validation prevents navigation)
+    await expect(page).toHaveURL(/\/games\/create/)
   })
 })

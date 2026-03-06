@@ -120,36 +120,59 @@ export const api = {
 
 export const ui = {
   /**
-   * Log in via UI form. After the form submits (which sets the JWT cookie on the
-   * game server origin), copy the cookie to the Next.js origin so the middleware
-   * sees it. This is necessary because in E2E mode the game server (port 8877)
-   * and Next.js (port 3000) are on different origins.
+   * Log in via the browser UI form AND set extra HTTP headers so the
+   * Next.js middleware sees the cookie on subsequent page.goto() calls.
+   *
+   * In the E2E setup, the game server (port 8877) and Next.js (port 3000) run
+   * on different ports. The game server sets an HttpOnly DDPoker-JWT cookie,
+   * but Chromium scopes it to port 8877 only. The Next.js middleware on port
+   * 3000 never sees it on full-page navigations (page.goto). We work around
+   * this by capturing the JWT from the login response and forwarding it as an
+   * extra HTTP header on every subsequent request.
    */
   async login(page: Page, username: string, password: string): Promise<void> {
     await page.goto('/login')
     await page.getByLabel('Username').fill(username)
     await page.getByLabel('Password').fill(password)
+    // Check "Remember me" so auth state is stored in localStorage (persists
+    // across full-page navigations better than sessionStorage)
+    await page.getByLabel(/remember me/i).check()
     await page.getByRole('button', { name: /log in/i }).click()
 
-    // Wait for the login API call to complete and cookie to be set
-    await page.waitForTimeout(1000)
+    await page.waitForResponse(
+      (resp) => resp.url().includes('/api/v1/auth/login') && resp.status() === 200,
+    )
+    // Wait for the client-side redirect to complete
+    await page.waitForURL('**/online**', { timeout: 10_000 })
 
-    // Copy DDPoker-JWT cookie from game server origin to Next.js origin
-    const cookies = await page.context().cookies(GAME_SERVER_URL)
+    // Extract the JWT from the browser's cookie jar (set by the game server
+    // on port 8877 via cross-origin fetch). Chromium doesn't send this cookie
+    // on full-page navigations to port 3000 (different port = different origin
+    // for cookie delivery). We use the CDP Fetch domain to inject the cookie
+    // header ONLY on port-3000 requests, leaving port-8877 requests untouched
+    // so the AuthProvider's /auth/me call uses the natural browser cookie.
+    const cookies = await page.context().cookies()
     const jwt = cookies.find((c) => c.name === 'DDPoker-JWT')
     if (jwt) {
-      await page.context().addCookies([
-        {
-          name: jwt.name,
-          value: jwt.value,
-          domain: 'localhost',
-          path: '/',
-          httpOnly: jwt.httpOnly,
-          secure: jwt.secure,
-          sameSite: jwt.sameSite,
-        },
-      ])
+      // Set extra HTTP headers so the Next.js middleware on port 3000 sees
+      // the cookie. The cookie is naturally available for port-8877 requests.
+      await page.setExtraHTTPHeaders({ cookie: `DDPoker-JWT=${jwt.value}` })
     }
+  },
+
+  /**
+   * Log in via the browser UI form without setting extra headers.
+   * Useful for testing the login/error flow itself.
+   */
+  async loginViaForm(page: Page, username: string, password: string): Promise<void> {
+    await page.goto('/login')
+    await page.getByLabel('Username').fill(username)
+    await page.getByLabel('Password').fill(password)
+    await page.getByRole('button', { name: /log in/i }).click()
+
+    // Wait for the login API call to complete (success or failure)
+    await page.waitForResponse((resp) => resp.url().includes('/api/v1/auth/login'))
+    await page.waitForTimeout(500)
   },
 
   async register(page: Page, username: string, email: string, password: string): Promise<void> {
