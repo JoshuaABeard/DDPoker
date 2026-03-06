@@ -21,12 +21,16 @@ import com.donohoedigital.games.poker.HandAction;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.Card;
 import com.donohoedigital.games.poker.engine.Hand;
+import com.donohoedigital.games.poker.engine.HandSorted;
+import com.donohoedigital.games.poker.gameserver.websocket.message.ServerMessageData.ActionOptionsData;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Unit tests for {@link RemoteHoldemHand}.
@@ -147,5 +151,413 @@ class RemoteHoldemHandTest {
     void getHistorySizeReturnsZeroWithoutNpe() {
         // history_ is null in no-arg constructor — must not throw NPE
         assertThat(hand.getHistorySize()).isEqualTo(0);
+    }
+
+    // =========================================================================
+    // Bet tracking
+    // =========================================================================
+
+    @Nested
+    class BetTracking {
+
+        @Test
+        void updatePlayerBetTracksPerPlayerBets() {
+            hand.updatePlayerBet(1, 100);
+            hand.updatePlayerBet(2, 200);
+
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            ClientPlayer bob = new ClientPlayer(2, "Bob", false);
+
+            assertThat(hand.getBet(alice)).isEqualTo(100);
+            assertThat(hand.getBet(bob)).isEqualTo(200);
+        }
+
+        @Test
+        void updatePlayerBetZeroRemovesEntry() {
+            hand.updatePlayerBet(1, 100);
+            hand.updatePlayerBet(1, 0);
+
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getBet(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void getBetReturnsHighestBetAcrossAllPlayers() {
+            hand.updatePlayerBet(1, 100);
+            hand.updatePlayerBet(2, 300);
+            hand.updatePlayerBet(3, 200);
+
+            assertThat(hand.getBet()).isEqualTo(300);
+        }
+
+        @Test
+        void getBetReturnsZeroWhenNoBets() {
+            assertThat(hand.getBet()).isEqualTo(0);
+        }
+
+        @Test
+        void clearBetsRemovesAllBets() {
+            hand.updatePlayerBet(1, 100);
+            hand.updatePlayerBet(2, 200);
+            hand.clearBets();
+
+            assertThat(hand.getBet()).isEqualTo(0);
+
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getBet(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void getBetWithRoundIgnoresRound() {
+            hand.updatePlayerBet(1, 150);
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+
+            assertThat(hand.getBet(alice, BettingRound.PRE_FLOP.toLegacy())).isEqualTo(150);
+            assertThat(hand.getBet(alice, BettingRound.FLOP.toLegacy())).isEqualTo(150);
+        }
+    }
+
+    // =========================================================================
+    // Call calculation
+    // =========================================================================
+
+    @Nested
+    class CallCalculation {
+
+        @Test
+        void getCallFallbackComputesFromBets() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            ClientPlayer bob = new ClientPlayer(2, "Bob", false);
+            hand.updatePlayerBet(1, 50);
+            hand.updatePlayerBet(2, 200);
+
+            // alice needs 200 - 50 = 150 to call
+            assertThat(hand.getCall(alice)).isEqualTo(150);
+        }
+
+        @Test
+        void getCallFallbackNeverNegative() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            hand.updatePlayerBet(1, 200);
+            // alice has the highest bet, call should be 0 not negative
+            assertThat(hand.getCall(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void getCallUsesActionOptionsWhenAvailable() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            hand.updatePlayerBet(1, 50);
+            hand.updatePlayerBet(2, 200);
+
+            // Set action options with callAmount = 75 (overrides computed 150)
+            ActionOptionsData opts = new ActionOptionsData(false, false, true, 75, false, 0, 0, false, 0, 0, false, 0);
+            hand.updateActionOptions(opts);
+
+            assertThat(hand.getCall(alice)).isEqualTo(75);
+        }
+    }
+
+    // =========================================================================
+    // Min/max bet/raise from action options
+    // =========================================================================
+
+    @Nested
+    class MinMaxBetRaise {
+
+        @Test
+        void returnsZeroWithoutOptions() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+
+            assertThat(hand.getMinBet()).isEqualTo(0);
+            assertThat(hand.getMinRaise()).isEqualTo(0);
+            assertThat(hand.getMaxBet(alice)).isEqualTo(0);
+            assertThat(hand.getMaxRaise(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void returnsOptionValuesWhenSet() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+
+            ActionOptionsData opts = new ActionOptionsData(false, false, false, 0, true, 100, 500, true, 200, 1000,
+                    false, 0);
+            hand.updateActionOptions(opts);
+
+            assertThat(hand.getMinBet()).isEqualTo(100);
+            assertThat(hand.getMaxBet(alice)).isEqualTo(500);
+            assertThat(hand.getMinRaise()).isEqualTo(200);
+            assertThat(hand.getMaxRaise(alice)).isEqualTo(1000);
+        }
+    }
+
+    // =========================================================================
+    // Pot odds
+    // =========================================================================
+
+    @Nested
+    class PotOdds {
+
+        @Test
+        void potOddsComputesCorrectly() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            hand.updatePlayerBet(2, 100); // someone bet 100
+            hand.updatePot(300);
+
+            // call = 100 (highBet - alice's 0), pot = 300
+            // potOdds = 100 * 100 / (100 + 300) = 25.0
+            assertThat(hand.getPotOdds(alice)).isEqualTo(25.0f);
+        }
+
+        @Test
+        void potOddsReturnsZeroWhenCallIsZero() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            hand.updatePot(500);
+            // no bets, so call = 0
+            assertThat(hand.getPotOdds(alice)).isEqualTo(0.0f);
+        }
+    }
+
+    // =========================================================================
+    // Win tracking
+    // =========================================================================
+
+    @Nested
+    class WinTracking {
+
+        @Test
+        void winsAccumulatesForSplitPots() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            hand.wins(alice, 200, 0);
+            hand.wins(alice, 150, 1);
+
+            assertThat(hand.getWin(alice)).isEqualTo(350);
+        }
+
+        @Test
+        void getWinReturnsZeroForNoWins() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getWin(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void clearWinsResets() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            hand.wins(alice, 500, 0);
+            hand.clearWins();
+
+            assertThat(hand.getWin(alice)).isEqualTo(0);
+        }
+    }
+
+    // =========================================================================
+    // Blind / ante accessors
+    // =========================================================================
+
+    @Nested
+    class BlindAnteAccessors {
+
+        @Test
+        void smallBlindSetAndGet() {
+            hand.setSmallBlind(25);
+            assertThat(hand.getSmallBlind()).isEqualTo(25);
+        }
+
+        @Test
+        void bigBlindSetAndGet() {
+            hand.setBigBlind(50);
+            assertThat(hand.getBigBlind()).isEqualTo(50);
+        }
+
+        @Test
+        void anteSetAndGet() {
+            hand.setAnte(10);
+            assertThat(hand.getAnte()).isEqualTo(10);
+        }
+
+        @Test
+        void smallBlindSeatUpdateAndGet() {
+            assertThat(hand.getRemoteSmallBlindSeat()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
+            hand.updateSmallBlindSeat(3);
+            assertThat(hand.getRemoteSmallBlindSeat()).isEqualTo(3);
+        }
+
+        @Test
+        void bigBlindSeatUpdateAndGet() {
+            assertThat(hand.getRemoteBigBlindSeat()).isEqualTo(RemoteHoldemHand.NO_CURRENT_PLAYER);
+            hand.updateBigBlindSeat(5);
+            assertThat(hand.getRemoteBigBlindSeat()).isEqualTo(5);
+        }
+    }
+
+    // =========================================================================
+    // Pots
+    // =========================================================================
+
+    @Nested
+    class Pots {
+
+        @Test
+        void numPotsInitiallyZero() {
+            assertThat(hand.getNumPots()).isEqualTo(0);
+        }
+
+        @Test
+        void getPotBoundsCheckReturnsNull() {
+            assertThat(hand.getPot(-1)).isNull();
+            assertThat(hand.getPot(0)).isNull();
+        }
+    }
+
+    // =========================================================================
+    // State flags
+    // =========================================================================
+
+    @Nested
+    class StateFlags {
+
+        @Test
+        void isAllInShowdownAlwaysFalse() {
+            assertThat(hand.isAllInShowdown()).isFalse();
+        }
+
+        @Test
+        void isStoredInDatabaseAlwaysFalse() {
+            assertThat(hand.isStoredInDatabase()).isFalse();
+        }
+
+        @Test
+        void isFoldedDelegatesToPlayer() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.isFolded(alice)).isFalse();
+
+            alice.setFolded(true);
+            assertThat(hand.isFolded(alice)).isTrue();
+        }
+
+        @Test
+        void getLastActionReturnsActionNone() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getLastAction(alice)).isEqualTo(HandAction.ACTION_NONE);
+        }
+
+        @Test
+        void getLastActionThisRoundReturnsActionNone() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getLastActionThisRound(alice)).isEqualTo(HandAction.ACTION_NONE);
+        }
+
+        @Test
+        void isActionInRoundAlwaysFalse() {
+            assertThat(hand.isActionInRound(0)).isFalse();
+            assertThat(hand.isActionInRound(1)).isFalse();
+        }
+
+        @Test
+        void getFoldRoundReturnsNegativeOne() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getFoldRound(alice)).isEqualTo(-1);
+        }
+
+        @Test
+        void getOverbetReturnsZero() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getOverbet(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void getTotalBetReturnsZero() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getTotalBet(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void getNumPriorRaisesReturnsZero() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            assertThat(hand.getNumPriorRaises(alice)).isEqualTo(0);
+        }
+
+        @Test
+        void getStartDateReturnsZero() {
+            assertThat(hand.getStartDate()).isEqualTo(0);
+        }
+
+        @Test
+        void getEndDateReturnsZero() {
+            assertThat(hand.getEndDate()).isEqualTo(0);
+        }
+
+        @Test
+        void getLastActionNoArgReturnsNull() {
+            assertThat(hand.getLastAction()).isNull();
+        }
+    }
+
+    // =========================================================================
+    // Other
+    // =========================================================================
+
+    @Nested
+    class Other {
+
+        @Test
+        void getNumWithCardsCountsNonFoldedPlayers() {
+            ClientPlayer alice = new ClientPlayer(1, "Alice", true);
+            ClientPlayer bob = new ClientPlayer(2, "Bob", false);
+            ClientPlayer charlie = new ClientPlayer(3, "Charlie", false);
+            charlie.setFolded(true);
+
+            hand.updatePlayerOrder(List.of(alice, bob, charlie));
+            assertThat(hand.getNumWithCards()).isEqualTo(2);
+        }
+
+        @Test
+        void getMinChipReturnsOneWithNoTable() {
+            assertThat(hand.getMinChip()).isEqualTo(1);
+        }
+
+        @Test
+        void getDeckThrowsUnsupportedOperationException() {
+            assertThatThrownBy(() -> hand.getDeck()).isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void getMuckThrowsUnsupportedOperationException() {
+            assertThatThrownBy(() -> hand.getMuck()).isInstanceOf(UnsupportedOperationException.class);
+        }
+
+        @Test
+        void getRoundForDisplayReturnsLegacyInt() {
+            hand.updateRound(BettingRound.FLOP);
+            assertThat(hand.getRoundForDisplay()).isEqualTo(BettingRound.FLOP.toLegacy());
+        }
+
+        @Test
+        void getCommunityForDisplaySameAsCommunity() {
+            Hand community = new Hand();
+            community.addCard(Card.getCard("Ah"));
+            hand.updateCommunity(community);
+
+            assertThat(hand.getCommunityForDisplay()).isSameAs(hand.getCommunity());
+        }
+
+        @Test
+        void getCommunitySortedCachedUntilCommunityChanges() {
+            Hand community = new Hand();
+            community.addCard(Card.getCard("Kd"));
+            community.addCard(Card.getCard("2c"));
+            community.addCard(Card.getCard("Ah"));
+            hand.updateCommunity(community);
+
+            HandSorted sorted1 = hand.getCommunitySorted();
+            HandSorted sorted2 = hand.getCommunitySorted();
+            assertThat(sorted1).isSameAs(sorted2); // cached
+
+            // Change community — should produce new sorted hand
+            Hand newCommunity = new Hand();
+            newCommunity.addCard(Card.getCard("3s"));
+            hand.updateCommunity(newCommunity);
+
+            HandSorted sorted3 = hand.getCommunitySorted();
+            assertThat(sorted3).isNotSameAs(sorted1);
+        }
     }
 }
