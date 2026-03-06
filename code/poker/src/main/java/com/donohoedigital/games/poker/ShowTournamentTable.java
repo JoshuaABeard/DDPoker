@@ -2564,7 +2564,7 @@ public class ShowTournamentTable extends ShowPokerTable
         SetBlinds(String sStyle, int level) {
             super(GuiManager.DEFAULT, sStyle);
             level_ = level;
-            ClientTournamentProfileHtml html = new ClientTournamentProfileHtml(table_.getProfile());
+            TournamentProfileFormatter html = new TournamentProfileFormatter(table_.getProfile());
             setText(html.getBlindsText("msg.menu.", level, true));
 
             if (level == game_.getLevel()) {

@@ -64,7 +64,7 @@ public class TournamentSummaryPanel extends DDPanel {
     private DDTabbedPane tab_;
     private String sHelpName_;
     private TournamentProfile profile_;
-    private ClientTournamentProfileHtml profileHtml_;
+    private TournamentProfileFormatter profileHtml_;
     private ImageComponent ic_ = new ImageComponent("ddlogo20", 1.0d);
     private boolean bListMode_;
 
@@ -205,7 +205,7 @@ public class TournamentSummaryPanel extends DDPanel {
 
     public void updateProfile(TournamentProfile profile) {
         profile_ = profile;
-        profileHtml_ = profile_ == null ? null : new ClientTournamentProfileHtml(profile_);
+        profileHtml_ = profile_ == null ? null : new TournamentProfileFormatter(profile_);
         setSummaryText();
         if (payout_ != null)
             payout_.updateProfile(profileHtml_);
@@ -347,14 +347,14 @@ public class TournamentSummaryPanel extends DDPanel {
         GameContext context;
         List<ClientPlayer> rank;
         TournamentProfile profile;
-        ClientTournamentProfileHtml html;
+        TournamentProfileFormatter html;
         List<BaseProfile> playerTypes;
         String[] names;
         int[] widths;
         boolean bPayout;
         boolean bOppMix;
 
-        TournamentModel(GameContext context, ClientTournamentProfileHtml profileHtml, String names[], int[] widths) {
+        TournamentModel(GameContext context, TournamentProfileFormatter profileHtml, String names[], int[] widths) {
             this.context = context;
             this.names = names;
             this.widths = widths;
@@ -363,7 +363,7 @@ public class TournamentSummaryPanel extends DDPanel {
             updateProfile(profileHtml);
         }
 
-        public void updateProfile(ClientTournamentProfileHtml h) {
+        public void updateProfile(TournamentProfileFormatter h) {
             if (h == null)
                 return;
             profile = h.getProfile();
