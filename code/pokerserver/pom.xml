@@ -188,7 +188,7 @@
       </plugin>
 
       <!-- Jacoco Coverage Enforcement -->
-      <!-- Baseline: 36% instruction coverage -->
+      <!-- Baseline: 71% instruction coverage -->
       <plugin>
         <groupId>org.jacoco</groupId>
         <artifactId>jacoco-maven-plugin</artifactId>
@@ -206,7 +206,7 @@
                     <limit>
                       <counter>INSTRUCTION</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.36</minimum>
+                      <minimum>0.71</minimum>
                     </limit>
                   </limits>
                 </rule>
