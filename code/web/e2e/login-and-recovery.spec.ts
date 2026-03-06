@@ -51,7 +51,7 @@ test.describe('Login and Password Recovery', () => {
 
   test('wrong password shows error alert and stays on /login', async ({ page }) => {
     await ui.login(page, 'alice', 'wrongpassword')
-    await expect(page.getByRole('alert')).toBeVisible()
+    await expect(page.locator('[role="alert"]').first()).toBeVisible()
     await expect(page).toHaveURL(/\/login/)
   })
 
@@ -83,29 +83,29 @@ test.describe('Login and Password Recovery', () => {
   test('logout clears access and redirects to /login', async ({ page }) => {
     await ui.login(page, 'alice', 'password123')
     await expect(page).toHaveURL(/\/online/)
-    await page.getByRole('button', { name: /log out/i }).click()
+    await page.getByRole('button', { name: /logout/i }).click()
     await page.goto('/games')
     await expect(page).toHaveURL(/\/login/)
   })
 
   test('forgot password link on login page leads to /forgot', async ({ page }) => {
     await page.goto('/login')
-    await page.getByRole('link', { name: 'Forgot your password?' }).click()
+    await page.getByRole('link', { name: 'Forgot your password?' }).first().click()
     await expect(page).toHaveURL(/\/forgot/)
   })
 
   test('full forgot -> reset -> login flow', async ({ page }) => {
     await page.goto('/forgot')
-    await page.getByLabel('Email').fill('alice@example.com')
-    await page.getByRole('button', { name: /submit|send|reset/i }).click()
+    await page.getByLabel('Email address').fill('alice@example.com')
+    await page.getByRole('button', { name: /send reset link/i }).click()
 
     const resetToken = await api.getForgotPasswordToken('alice@example.com')
 
     await page.goto(`/reset-password?token=${resetToken}`)
-    await page.getByPlaceholder('New password').fill('newpassword456')
+    await page.getByPlaceholder('New password (min 8 chars)').fill('newpassword456')
     await page.getByPlaceholder('Confirm password').fill('newpassword456')
-    await page.getByRole('button', { name: /reset/i }).click()
-    await expect(page.getByText('Password reset')).toBeVisible()
+    await page.getByRole('button', { name: /reset password/i }).click()
+    await expect(page.getByText('Password reset. Redirecting to login')).toBeVisible()
 
     await expect(page).toHaveURL(/\/login/, { timeout: 10000 })
 
@@ -115,6 +115,7 @@ test.describe('Login and Password Recovery', () => {
 
   test('/reset-password without token shows invalid link message', async ({ page }) => {
     await page.goto('/reset-password')
-    await expect(page.getByText(/invalid link|no reset token/i)).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Invalid link' })).toBeVisible()
+    await expect(page.getByText('No reset token provided.')).toBeVisible()
   })
 })

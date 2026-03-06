@@ -47,7 +47,8 @@ test.describe('Account Management', () => {
     await ui.login(page, 'acctuser', 'password123')
     await page.goto('/account')
 
-    await expect(page.getByText('acctuser@example.com')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Account Settings' })).toBeVisible()
+    await expect(page.getByText('Current email: acctuser@example.com')).toBeVisible()
     await expect(page.getByRole('heading', { name: /change password/i })).toBeVisible()
     await expect(page.getByRole('heading', { name: /change email/i })).toBeVisible()
   })
@@ -61,7 +62,7 @@ test.describe('Account Management', () => {
     await page.getByPlaceholder('Confirm new password').fill('newpassword1')
     await page.getByRole('button', { name: /change password/i }).click()
 
-    await expect(page.getByText(/error|incorrect|invalid/i)).toBeVisible()
+    await expect(page.getByText('Failed to change password. Check your current password.')).toBeVisible()
   })
 
   test('change password with mismatched new passwords shows error', async ({ page }) => {
@@ -97,10 +98,10 @@ test.describe('Account Management', () => {
     await page.getByPlaceholder('Confirm new password').fill('newpassword1')
     await page.getByRole('button', { name: /change password/i }).click()
 
-    await expect(page.getByText(/success/i)).toBeVisible()
+    await expect(page.getByText('Password changed successfully.')).toBeVisible()
 
     // Logout
-    await page.getByRole('button', { name: /log out/i }).click()
+    await page.getByRole('button', { name: /logout/i }).click()
 
     // Re-login with new password
     await ui.login(page, 'acctuser', 'newpassword1')
@@ -132,6 +133,6 @@ test.describe('Account Management', () => {
 
     await page.getByRole('button', { name: /resend verification email/i }).click()
 
-    await expect(page.getByText(/verification|sent|confirmation/i)).toBeVisible()
+    await expect(page.getByText(/Verification email resent|Could not resend/i)).toBeVisible()
   })
 })
