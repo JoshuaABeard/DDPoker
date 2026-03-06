@@ -61,7 +61,7 @@ test.describe('Static Pages', () => {
     await page.goto('/about')
 
     // Click FAQ in the sidebar
-    await page.getByRole('link', { name: 'FAQ' }).click()
+    await page.getByRole('link', { name: /FAQ/ }).click()
     await expect(page).toHaveURL('/about/faq')
     await expect(page.getByRole('heading', { name: /Poker FAQ/i })).toBeVisible()
   })
@@ -99,9 +99,10 @@ test.describe('Static Pages', () => {
     await page.goto('/online')
     await expect(page.getByRole('heading', { name: /Online Games Portal/i })).toBeVisible()
 
-    // Verify leaderboard and search links are present
-    await expect(page.getByRole('link', { name: 'Leaderboard' })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Player Search' })).toBeVisible()
+    // Verify leaderboard and search links are present (scoped to main to avoid sidebar duplicates)
+    const main = page.locator('main')
+    await expect(main.getByRole('link', { name: 'Leaderboard' })).toBeVisible()
+    await expect(main.getByRole('link', { name: 'Player Search' })).toBeVisible()
   })
 
   test('Leaderboard loads without login at /online/leaderboard', async ({ page }) => {

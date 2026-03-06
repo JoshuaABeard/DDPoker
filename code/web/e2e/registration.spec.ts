@@ -125,6 +125,7 @@ test.describe('Registration', () => {
 
   test('/verify-email page without token shows error message', async ({ page }) => {
     await page.goto('/verify-email')
-    await expect(page.getByText(/missing|invalid.*token/i)).toBeVisible({ timeout: 5000 })
+    await expect(page.getByRole('heading', { name: /Verification failed/i })).toBeVisible({ timeout: 5000 })
+    await expect(page.getByText('Missing token.')).toBeVisible()
   })
 })
