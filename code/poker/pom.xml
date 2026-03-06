@@ -291,6 +291,31 @@
         </executions>
       </plugin>
 
+      <!-- Maven Enforcer: Ban pokergamecore dependency -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>ban-pokergamecore</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <searchTransitive>false</searchTransitive>
+                  <excludes>
+                    <exclude>*:pokergamecore</exclude>
+                  </excludes>
+                  <message>poker (desktop client) must not depend on pokergamecore — all game logic is server-side</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <!-- jpackage plugin configuration moved to OS-specific profiles below -->
       <!-- See profiles: installer-windows, installer-mac, installer-linux-deb, installer-linux-rpm -->
 
