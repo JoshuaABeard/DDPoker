@@ -58,26 +58,6 @@ public class ProfileService {
     }
 
     /**
-     * Update profile email.
-     *
-     * @param id
-     *            profile ID
-     * @param email
-     *            new email address
-     * @return true if updated, false if profile not found
-     */
-    public boolean updateProfile(Long id, String email) {
-        OnlineProfile profile = profileRepository.findById(id).orElse(null);
-        if (profile == null) {
-            return false;
-        }
-
-        profile.setEmail(email);
-        profileRepository.save(profile);
-        return true;
-    }
-
-    /**
      * Delete (retire) a profile.
      *
      * @param id
