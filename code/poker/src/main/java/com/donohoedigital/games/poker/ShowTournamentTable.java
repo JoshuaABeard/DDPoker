@@ -88,7 +88,6 @@ public class ShowTournamentTable extends ShowPokerTable
     private PokerGlassButton buttonDeal_;
     private PokerGlassButton buttonCheckCall_;
     private PokerGlassButton buttonRebuy_;
-    private GlassButton buttonTestCase_;
 
     private PokerButton buttonContinueLower_;
     private PokerButton buttonSidePot_;
@@ -311,16 +310,6 @@ public class ShowTournamentTable extends ShowPokerTable
                     if (hp != null && hp.getTable() != null) {
                         NewLevelActions.rebuy(game_, REBUY_BUTTON, hp.getTable().getLevel());
                     }
-                }
-            });
-        }
-
-        if (TESTING(PokerClientConstants.TESTING_TEST_CASE)) {
-            buttonTestCase_ = new GlassButton("testcase", "GlassBig");
-            buttonbase_.add(buttonTestCase_);
-            buttonTestCase_.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    createTestCase();
                 }
             });
         }
@@ -1051,7 +1040,6 @@ public class ShowTournamentTable extends ShowPokerTable
         boolean bAllowCheckCall = false;
         boolean bAllowDeal = false;
         boolean bAllowFold = false;
-        boolean bAllowTestCase = false;
         boolean bShowTimer = false;
 
         ClientPlayer localPlayer = game_.getLocalPlayer();
@@ -1087,7 +1075,6 @@ public class ShowTournamentTable extends ShowPokerTable
                 bAllowBetRaise = true;
                 bAllowFold = bFoldCheck;
                 bAllowAmount = true;
-                bAllowTestCase = true;
                 bShowTimer = true;
                 buttonBetRaise_.rename("bet");
                 buttonBetRaise_.setActionID(PokerGame.ACTION_BET);
@@ -1102,7 +1089,6 @@ public class ShowTournamentTable extends ShowPokerTable
                 bAllowBetRaise = true;
                 bAllowFold = bFoldCheck;
                 bAllowAmount = true;
-                bAllowTestCase = true;
                 bShowTimer = true;
                 buttonBetRaise_.rename("raise");
                 buttonBetRaise_.setActionID(PokerGame.ACTION_RAISE);
@@ -1117,7 +1103,6 @@ public class ShowTournamentTable extends ShowPokerTable
                 bAllowBetRaise = true;
                 bAllowFold = true;
                 bAllowAmount = true;
-                bAllowTestCase = true;
                 bShowTimer = true;
                 buttonBetRaise_.rename("raise");
                 buttonBetRaise_.setActionID(PokerGame.ACTION_RAISE);
@@ -1232,8 +1217,6 @@ public class ShowTournamentTable extends ShowPokerTable
             buttonFold_.setEnabled(bAllowFold);
             buttonSave_.setEnabled(bAllowSave);
             buttonQuit_.setEnabled(bAllowQuit);
-            if (buttonTestCase_ != null)
-                buttonTestCase_.setEnabled(bAllowTestCase);
 
             if (!bAllowBetRaise)
                 buttonBetRaise_.setEnabled(false);
@@ -1771,11 +1754,6 @@ public class ShowTournamentTable extends ShowPokerTable
                 }
             }
         }
-    }
-
-    protected void createTestCase() {
-        TypedHashMap params = new TypedHashMap();
-        context_.processPhaseNow("CreateTestCase", params);
     }
 
     ////

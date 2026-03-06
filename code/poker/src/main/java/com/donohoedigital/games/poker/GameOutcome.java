@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +32,33 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.ai;
+package com.donohoedigital.games.poker;
 
-public class AIStrategy {
+/**
+ * Classifies the outcome of a game for a player based on their finish place,
+ * prize winnings, and whether the game is over.
+ */
+public enum GameOutcome {
+    WIN, MONEY, OBSERVER, BUSTED;
+
+    /**
+     * Determine the game outcome for a player.
+     *
+     * @param place
+     *            the player's finishing place (1 = first)
+     * @param prize
+     *            the player's prize winnings
+     * @param gameOver
+     *            whether the game has ended
+     * @return the appropriate GameOutcome
+     */
+    public static GameOutcome determine(int place, int prize, boolean gameOver) {
+        if (place == 1)
+            return WIN;
+        if (prize > 0)
+            return MONEY;
+        if (gameOver)
+            return OBSERVER;
+        return BUSTED;
+    }
 }

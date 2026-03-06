@@ -139,16 +139,13 @@ public class GameOver extends DialogPhase {
             sExtra = PropertyConfig.getMessage("msg.gameover.practice");
         }
 
-        String sMsg;
-        if (human.getPlace() == 1) {
-            sMsg = PropertyConfig.getMessage("msg.gameover.out.win");
-        } else if (human.getPrize() > 0) {
-            sMsg = PropertyConfig.getMessage("msg.gameover.out.money");
-        } else if (game_.isGameOver()) {
-            sMsg = PropertyConfig.getMessage("msg.gameover.out.observer");
-        } else {
-            sMsg = PropertyConfig.getMessage("msg.gameover.out.busted");
-        }
+        GameOutcome outcome = GameOutcome.determine(human.getPlace(), human.getPrize(), game_.isGameOver());
+        String sMsg = PropertyConfig.getMessage(switch (outcome) {
+            case WIN -> "msg.gameover.out.win";
+            case MONEY -> "msg.gameover.out.money";
+            case OBSERVER -> "msg.gameover.out.observer";
+            case BUSTED -> "msg.gameover.out.busted";
+        });
 
         // label
         boolean bObs = human.isObserver() && human.getPlace() == 0;

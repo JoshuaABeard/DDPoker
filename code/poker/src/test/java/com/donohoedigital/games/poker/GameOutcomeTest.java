@@ -1,7 +1,9 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  * DD Poker - Source Code
- * Copyright (c) 2003-2026 Doug Donohoe
+ * Copyright (c) 2026 Joshua Beard and contributors
+ *
+ * This file is part of DD Poker, originally created by Doug Donohoe.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,29 +32,45 @@
  * doug [at] donohoe [dot] info.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.ai;
+package com.donohoedigital.games.poker;
 
-public interface AIConstants {
-    public static final int HOH_DEAD = 0;
-    public static final int HOH_RED = 1;
-    public static final int HOH_ORANGE = 2;
-    public static final int HOH_YELLOW = 3;
-    public static final int HOH_GREEN = 4;
+import static org.assertj.core.api.Assertions.*;
 
-    // Outcome constants (previously in RuleEngine)
-    int OUTCOME_NONE = -1;
-    int OUTCOME_FOLD = 0;
-    int OUTCOME_CHECK = 1;
-    int OUTCOME_LIMP = 2;
-    int OUTCOME_STEAL = 3;
-    int OUTCOME_OPEN_POT = 4;
-    int OUTCOME_CALL = 5;
-    int OUTCOME_RAISE = 6;
-    int OUTCOME_SEMI_BLUFF = 7;
-    int OUTCOME_TRAP = 8;
-    int OUTCOME_SLOW_PLAY = 9;
-    int OUTCOME_CHECK_RAISE = 10;
-    int OUTCOME_BET = 11;
-    int OUTCOME_ALL_IN = 12;
-    int OUTCOME_CONTINUATION_BET = 13;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+class GameOutcomeTest {
+
+    @Nested
+    class Determine {
+        @Test
+        void should_ReturnWin_When_PlaceIsFirst() {
+            assertThat(GameOutcome.determine(1, 500, false)).isEqualTo(GameOutcome.WIN);
+        }
+
+        @Test
+        void should_ReturnMoney_When_PrizePositiveButNotFirst() {
+            assertThat(GameOutcome.determine(3, 100, false)).isEqualTo(GameOutcome.MONEY);
+        }
+
+        @Test
+        void should_ReturnObserver_When_NoPrizeAndGameOver() {
+            assertThat(GameOutcome.determine(5, 0, true)).isEqualTo(GameOutcome.OBSERVER);
+        }
+
+        @Test
+        void should_ReturnBusted_When_NoPrizeAndGameNotOver() {
+            assertThat(GameOutcome.determine(5, 0, false)).isEqualTo(GameOutcome.BUSTED);
+        }
+
+        @Test
+        void should_ReturnWin_When_FirstPlaceEvenWithZeroPrize() {
+            assertThat(GameOutcome.determine(1, 0, false)).isEqualTo(GameOutcome.WIN);
+        }
+
+        @Test
+        void should_ReturnMoney_When_SecondPlaceWithPrize() {
+            assertThat(GameOutcome.determine(2, 250, true)).isEqualTo(GameOutcome.MONEY);
+        }
+    }
 }
