@@ -34,22 +34,27 @@ class BetCalculatorTest {
     class DetermineInputMode {
 
         @Test
-        void should_ReturnCheckBet_When_NothingToCallAndNoBet() {
+        void should_AllowCheckOrBet_When_NoBetAndNothingToCall() {
+            // Poker: when no one has bet, player can check or open with a bet
             assertThat(BetCalculator.determineInputMode(0, 0)).isEqualTo(PokerTableInput.MODE_CHECK_BET);
         }
 
         @Test
-        void should_ReturnCheckRaise_When_NothingToCallButBetExists() {
+        void should_AllowCheckOrRaise_When_BetExistsButNothingToCall() {
+            // Poker: when bet exists but player already matched, can check or raise
             assertThat(BetCalculator.determineInputMode(0, 100)).isEqualTo(PokerTableInput.MODE_CHECK_RAISE);
         }
 
         @Test
-        void should_ReturnCallRaise_When_ToCallIsPositive() {
+        void should_AllowCallOrRaise_When_FacingUnmatchedBet() {
+            // Poker: facing a bet you haven't matched, must call or raise
             assertThat(BetCalculator.determineInputMode(50, 0)).isEqualTo(PokerTableInput.MODE_CALL_RAISE);
         }
 
         @Test
-        void should_ReturnCallRaise_When_ToCallAndBetBothPositive() {
+        void should_AllowCallOrRaise_When_FacingBetWithCurrentBetOnTable() {
+            // Poker: toCall takes priority — if there's an amount to call, it's
+            // call-or-raise
             assertThat(BetCalculator.determineInputMode(50, 100)).isEqualTo(PokerTableInput.MODE_CALL_RAISE);
         }
     }
@@ -110,19 +115,22 @@ class BetCalculatorTest {
     class DetermineBetOrRaise {
 
         @Test
-        void should_ReturnBet_When_ModeIsCheckBet() {
+        void should_ReturnBet_When_OpeningAction() {
+            // Poker: opening a new bet (no prior bet) is called a "bet"
             assertThat(BetCalculator.determineBetOrRaise(PokerTableInput.MODE_CHECK_BET))
                     .isEqualTo(HandAction.ACTION_BET);
         }
 
         @Test
-        void should_ReturnRaise_When_ModeIsCheckRaise() {
+        void should_ReturnRaise_When_BetAlreadyExists() {
+            // Poker: increasing an existing bet is a "raise"
             assertThat(BetCalculator.determineBetOrRaise(PokerTableInput.MODE_CHECK_RAISE))
                     .isEqualTo(HandAction.ACTION_RAISE);
         }
 
         @Test
-        void should_ReturnRaise_When_ModeIsCallRaise() {
+        void should_ReturnRaise_When_FacingBetToCall() {
+            // Poker: increasing over a bet you must call is a "raise"
             assertThat(BetCalculator.determineBetOrRaise(PokerTableInput.MODE_CALL_RAISE))
                     .isEqualTo(HandAction.ACTION_RAISE);
         }
@@ -136,19 +144,22 @@ class BetCalculatorTest {
     class DetermineCheckOrCall {
 
         @Test
-        void should_ReturnCheck_When_ModeIsCheckBet() {
+        void should_ReturnCheck_When_NoBetToMatch() {
+            // Poker: "check" means pass without betting when no bet is open
             assertThat(BetCalculator.determineCheckOrCall(PokerTableInput.MODE_CHECK_BET))
                     .isEqualTo(HandAction.ACTION_CHECK);
         }
 
         @Test
-        void should_ReturnCheck_When_ModeIsCheckRaise() {
+        void should_ReturnCheck_When_BetExistsButAlreadyMatched() {
+            // Poker: already matched the current bet, so player can check
             assertThat(BetCalculator.determineCheckOrCall(PokerTableInput.MODE_CHECK_RAISE))
                     .isEqualTo(HandAction.ACTION_CHECK);
         }
 
         @Test
-        void should_ReturnCall_When_ModeIsCallRaise() {
+        void should_ReturnCall_When_FacingUnmatchedBet() {
+            // Poker: "call" means matching the current bet
             assertThat(BetCalculator.determineCheckOrCall(PokerTableInput.MODE_CALL_RAISE))
                     .isEqualTo(HandAction.ACTION_CALL);
         }
