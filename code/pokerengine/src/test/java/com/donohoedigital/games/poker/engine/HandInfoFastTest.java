@@ -1197,6 +1197,91 @@ class HandInfoFastTest implements HandScoreConstants {
     }
 
     // ---------------------------------------------------------------
+    // Hand comparison and kicker tests
+    // ---------------------------------------------------------------
+
+    @Nested
+    class HandComparison {
+
+        @Test
+        void should_RankHigherPairAboveLowerPair() {
+            // Poker rule: AA beats KK (higher pair wins)
+            Hand community = new Hand(Card.DIAMONDS_9, Card.CLUBS_7, Card.SPADES_5, Card.HEARTS_3, Card.CLUBS_2);
+
+            int aces = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_A), community);
+            int kings = info.getScore(new Hand(Card.SPADES_K, Card.HEARTS_K), community);
+
+            assertThat(aces).isGreaterThan(kings);
+        }
+
+        @Test
+        void should_UseKicker_When_PairsAreEqual() {
+            // Poker rule: same pair, highest kicker wins (K kicker beats Q kicker)
+            int pairAcesKingKicker = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_K),
+                    new Hand(Card.DIAMONDS_A, Card.CLUBS_7, Card.SPADES_5, Card.HEARTS_3, Card.CLUBS_2));
+            int pairAcesQueenKicker = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_Q),
+                    new Hand(Card.DIAMONDS_A, Card.CLUBS_7, Card.SPADES_5, Card.HEARTS_3, Card.CLUBS_2));
+
+            assertThat(pairAcesKingKicker).isGreaterThan(pairAcesQueenKicker);
+        }
+
+        @Test
+        void should_TieScore_When_HandsAreIdentical() {
+            // Poker rule: suits don't matter for hand ranking; identical ranks tie
+            int handA = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_K),
+                    new Hand(Card.DIAMONDS_Q, Card.CLUBS_J, Card.SPADES_9, Card.HEARTS_7, Card.CLUBS_5));
+            int handB = info.getScore(new Hand(Card.HEARTS_A, Card.DIAMONDS_K),
+                    new Hand(Card.CLUBS_Q, Card.SPADES_J, Card.HEARTS_9, Card.DIAMONDS_7, Card.SPADES_5));
+
+            assertThat(handA).isEqualTo(handB);
+        }
+
+        @Test
+        void should_RankWheelBelowSixHighStraight() {
+            // Poker rule: A-2-3-4-5 (wheel) loses to 2-3-4-5-6 (six-high straight)
+            int wheel = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_2),
+                    new Hand(Card.DIAMONDS_3, Card.CLUBS_4, Card.SPADES_5, Card.HEARTS_9, Card.CLUBS_K));
+            int sixHigh = info.getScore(new Hand(Card.SPADES_6, Card.HEARTS_2),
+                    new Hand(Card.DIAMONDS_3, Card.CLUBS_4, Card.SPADES_5, Card.HEARTS_9, Card.CLUBS_K));
+
+            assertThat(sixHigh).isGreaterThan(wheel);
+        }
+
+        @Test
+        void should_CompareTopPairFirst_When_BothHaveTwoPair() {
+            // Poker rule: two pair compares top pair first (AA-22 beats KK-QQ)
+            int acesUp = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_2),
+                    new Hand(Card.DIAMONDS_A, Card.CLUBS_2, Card.SPADES_7, Card.HEARTS_3, Card.CLUBS_9));
+            int kingsUp = info.getScore(new Hand(Card.SPADES_K, Card.HEARTS_Q),
+                    new Hand(Card.DIAMONDS_K, Card.CLUBS_Q, Card.SPADES_7, Card.HEARTS_3, Card.CLUBS_9));
+
+            assertThat(acesUp).isGreaterThan(kingsUp);
+        }
+
+        @Test
+        void should_CompareTripsFirst_When_BothHaveFullHouse() {
+            // Poker rule: full house compares trips first (AAA-22 beats KKK-QQ)
+            int acesFull = info.getScore(new Hand(Card.SPADES_A, Card.HEARTS_A),
+                    new Hand(Card.DIAMONDS_A, Card.CLUBS_2, Card.SPADES_2, Card.HEARTS_7, Card.CLUBS_9));
+            int kingsFull = info.getScore(new Hand(Card.SPADES_K, Card.HEARTS_K),
+                    new Hand(Card.DIAMONDS_K, Card.CLUBS_Q, Card.SPADES_Q, Card.HEARTS_7, Card.CLUBS_9));
+
+            assertThat(acesFull).isGreaterThan(kingsFull);
+        }
+
+        @Test
+        void should_RankFlushAboveStraight() {
+            // Poker rule: flush beats straight
+            int flush = info.getScore(new Hand(Card.HEARTS_A, Card.HEARTS_9),
+                    new Hand(Card.HEARTS_7, Card.HEARTS_5, Card.HEARTS_3, Card.SPADES_K, Card.CLUBS_Q));
+            int straight = info.getScore(new Hand(Card.SPADES_T, Card.HEARTS_9),
+                    new Hand(Card.DIAMONDS_8, Card.CLUBS_7, Card.SPADES_6, Card.HEARTS_2, Card.CLUBS_3));
+
+            assertThat(flush).isGreaterThan(straight);
+        }
+    }
+
+    // ---------------------------------------------------------------
     // Straight draw outs reduced when flush draw present
     // ---------------------------------------------------------------
 
