@@ -974,7 +974,7 @@ public class ServerTournamentDirector implements Runnable {
      * @param millis
      *            milliseconds to sleep
      */
-    private void sleepMillis(int millis) {
+    void sleepMillis(int millis) {
         // Clear any pending interrupt before sleeping so it does not cause the
         // sleep to return immediately without waiting.
         Thread.interrupted();

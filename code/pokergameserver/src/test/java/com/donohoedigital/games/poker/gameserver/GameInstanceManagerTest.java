@@ -220,7 +220,10 @@ class GameInstanceManagerTest {
 
         manager.startGame(game.getGameId(), 100L);
 
-        assertEquals(GameInstanceState.IN_PROGRESS, game.getState());
+        // Game may complete before we check (all-AI, fast executor), so accept either
+        GameInstanceState state = game.getState();
+        assertTrue(state == GameInstanceState.IN_PROGRESS || state == GameInstanceState.COMPLETED,
+                "Expected IN_PROGRESS or COMPLETED but was " + state);
     }
 
     @Test

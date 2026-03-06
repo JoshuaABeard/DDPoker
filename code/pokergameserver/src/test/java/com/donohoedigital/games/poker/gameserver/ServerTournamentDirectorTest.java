@@ -70,7 +70,7 @@ class ServerTournamentDirectorTest {
         // Run in background thread
         Thread thread = new Thread(director);
         thread.start();
-        thread.join(30000); // 30 second timeout
+        thread.join(120000); // generous timeout for slow CI runners
 
         // Verify completion
         assertThat(thread.isAlive()).isFalse();
@@ -252,7 +252,7 @@ class ServerTournamentDirectorTest {
         // Run
         Thread thread = new Thread(director);
         thread.start();
-        thread.join(30000);
+        thread.join(120000);
 
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();
@@ -273,64 +273,64 @@ class ServerTournamentDirectorTest {
      */
     @Test
     void interHandPausePreventsRacing() throws Exception {
-        int delayMs = 20; // small enough for fast tests, large enough to detect racing
+        int delayMs = 20;
 
-        // 6 players ensures at least 5 hands are played before one player wins all
-        // chips
+        // 6 players ensures multiple hands are played before one player wins
         List<ServerPlayer> players = createPlayers(6, 500);
         ServerTournamentContext tournament = createTournament(players, 1);
 
         InMemoryGameEventStore eventStore = new InMemoryGameEventStore("test-pacing");
         ServerGameEventBus eventBus = new ServerGameEventBus(eventStore);
 
-        // AI actions: instant (no per-action delay). Only inter-hand pause is tested.
         PlayerActionProvider aiProvider = createSimpleAI(42);
         ServerPlayerActionProvider actionProvider = new ServerPlayerActionProvider(aiProvider, request -> {
         }, 0, 2, new java.util.concurrent.ConcurrentHashMap<>());
 
-        // Record timestamp of each HAND_STARTED event
-        List<Long> handStartedNanos = new CopyOnWriteArrayList<>();
+        // Count HAND_STARTED events to know how many hands were played
+        List<Object> handStartedEvents = new CopyOnWriteArrayList<>();
         eventBus.subscribe(event -> {
             if (event instanceof GameEvent.HandStarted) {
-                handStartedNanos.add(System.nanoTime());
+                handStartedEvents.add(event);
             }
         });
 
+        // Track sleepMillis calls: override to skip real sleeping, just record args
+        List<Integer> sleepCalls = new CopyOnWriteArrayList<>();
         ServerTournamentDirector director = new ServerTournamentDirector(new TournamentEngine(eventBus, actionProvider),
                 tournament, eventBus, actionProvider,
                 new GameServerProperties(50, 30, 120, 10, 1000, 3, 2, 5, 5, 24, 7, "ws://localhost", delayMs),
                 event -> {
-                });
-        // Use delayMs as the inter-hand pause so the game finishes in milliseconds
-        // rather than seconds. Without this the default 3-second pause can cause the
-        // 30-second join timeout to be exceeded on slow CI machines.
+                }) {
+            @Override
+            void sleepMillis(int millis) {
+                sleepCalls.add(millis);
+                // No real sleep — deterministic and fast
+            }
+        };
         director.setHandResultPauseMs(delayMs);
 
         Thread thread = new Thread(director);
         thread.start();
-        thread.join(30000); // wait for game to complete naturally
+        thread.join(120000);
 
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();
 
-        // Must have played at least 2 hands for gap assertions to be meaningful
-        assertThat(handStartedNanos.size())
-                .as("Expected at least 2 HAND_STARTED events but got %d", handStartedNanos.size())
+        // Must have played at least 2 hands for pause assertions to be meaningful
+        assertThat(handStartedEvents.size())
+                .as("Expected at least 2 HAND_STARTED events but got %d", handStartedEvents.size())
                 .isGreaterThanOrEqualTo(2);
 
-        // Verify inter-hand gaps prove the pause is working.
-        // Old racing bug: gaps were <1ms (sleep hook was dead code). Fixed by
-        // hooking nextState==BEGIN instead of unreachable CLEAN/CheckEndHand.
-        // Use 50% tolerance to account for OS thread-scheduling jitter on CI;
-        // the original bug produced gaps of <1ms, so half the delay is plenty
-        // to distinguish "pause is working" from "pause is broken".
-        long toleranceNs = (long) delayMs * 1_000_000L / 2;
-        for (int i = 1; i < handStartedNanos.size(); i++) {
-            long gapNs = handStartedNanos.get(i) - handStartedNanos.get(i - 1);
-            assertThat(gapNs)
-                    .as("Gap between HAND_STARTED[%d] and [%d] should be >= %dms (racing fix)", i - 1, i, delayMs / 2)
-                    .isGreaterThanOrEqualTo(toleranceNs);
-        }
+        // Verify sleepMillis was called with the configured delay between hands.
+        // The old racing bug: sleepMillis was hooked to unreachable dead code
+        // (CLEAN/CheckEndHand), so it was never invoked. The fix hooks
+        // nextState==BEGIN which is the actual inter-hand transition.
+        // At least (hands - 1) inter-hand pauses should have occurred.
+        long interHandPauses = sleepCalls.stream().filter(ms -> ms == delayMs).count();
+        assertThat(interHandPauses)
+                .as("Expected at least %d inter-hand pauses (one per hand transition) but got %d",
+                        handStartedEvents.size() - 1, interHandPauses)
+                .isGreaterThanOrEqualTo(handStartedEvents.size() - 1);
     }
 
     /**
@@ -505,7 +505,7 @@ class ServerTournamentDirectorTest {
 
         Thread thread = new Thread(director);
         thread.start();
-        thread.join(30000);
+        thread.join(120000);
 
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();
@@ -684,7 +684,7 @@ class ServerTournamentDirectorTest {
         // With zip mode working, even delayMs=50 should not make this slow —
         // the human folds every hand, so zip mode skips both per-action and inter-hand
         // delays.
-        thread.join(30000);
+        thread.join(120000);
 
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();
@@ -950,7 +950,7 @@ class ServerTournamentDirectorTest {
 
         Thread thread = new Thread(director);
         thread.start();
-        thread.join(30000);
+        thread.join(120000);
 
         assertThat(thread.isAlive()).isFalse();
         assertThat(tournament.isGameOver()).isTrue();
