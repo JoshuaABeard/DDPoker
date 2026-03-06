@@ -569,6 +569,146 @@ class ServerHandScenarioTest {
         assertEquals(expectedPot, hand.getPotSize(), "Pot should equal antes + blinds");
     }
 
+    // ==================== Scenario 5: Button Rotation ====================
+
+    /**
+     * Verify the dealer button rotates clockwise across multiple hands. With 4
+     * players seated 0-3, the button should visit each seat in order.
+     */
+    @Test
+    void scenario_buttonRotates_clockwiseAcrossHands() {
+        int numPlayers = 4;
+        int startingChips = 50000;
+        int sb = 50;
+        int bb = 100;
+
+        List<ServerPlayer> players = createPlayers(numPlayers, startingChips);
+
+        // Use ServerGameTable to test real advanceButton logic
+        ServerGameTable table = new ServerGameTable(0, numPlayers, null, sb, bb, 0);
+        for (int i = 0; i < numPlayers; i++) {
+            table.addPlayer(players.get(i), i);
+        }
+
+        // Play 6 hands (more than numPlayers to verify wrap-around)
+        for (int h = 0; h < 6; h++) {
+            table.startNewHand();
+            ServerHand hand = (ServerHand) table.getHoldemHand();
+            assertNotNull(hand, "Hand " + (h + 1) + " should be dealt");
+
+            // After first advanceButton from -1, button goes to seat 0.
+            // Subsequent calls advance clockwise: 0 -> 1 -> 2 -> 3 -> 0 -> 1
+            int expectedButton = h % numPlayers;
+            assertEquals(expectedButton, table.getButton(),
+                    "Hand " + (h + 1) + ": button should be at seat " + expectedButton);
+
+            // Play the hand to completion (everyone folds to BB)
+            ServerPlayer current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+            while (current != null && !hand.isUncontested()) {
+                hand.applyPlayerAction(current, PlayerAction.fold());
+                current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+            }
+
+            while (hand.getRound() != BettingRound.SHOWDOWN) {
+                hand.advanceRound();
+            }
+            hand.resolve();
+        }
+    }
+
+    /**
+     * In heads-up play, the button posts the small blind. Verify that after
+     * dealing, the button-seat player has been deducted the SB amount and the other
+     * player has been deducted the BB amount.
+     */
+    @Test
+    void scenario_headsUp_buttonIsSB() {
+        int startingChips = 5000;
+        int sb = 50;
+        int bb = 100;
+
+        List<ServerPlayer> players = createPlayers(2, startingChips);
+        int button = 0;
+        int[] blinds = blindSeats(button, 2);
+        // blindSeats for 2 players: SB = button (0), BB = 1
+        assertEquals(button, blinds[0], "In heads-up, SB seat should equal button seat");
+
+        MockServerGameTable table = setupTable(players, button);
+        ServerHand hand = new ServerHand(table, 1, sb, bb, 0, button, blinds[0], blinds[1]);
+        hand.deal();
+
+        // Button player (seat 0) should have posted SB
+        assertEquals(startingChips - sb, players.get(0).getChipCount(),
+                "Button player should post small blind in heads-up");
+
+        // Other player (seat 1) should have posted BB
+        assertEquals(startingChips - bb, players.get(1).getChipCount(),
+                "Non-button player should post big blind in heads-up");
+
+        // Pot should contain both blinds
+        assertEquals(sb + bb, hand.getPotSize(), "Pot should contain SB + BB");
+    }
+
+    /**
+     * When a player is eliminated (removed from table), the button should skip that
+     * seat on advancement.
+     */
+    @Test
+    void scenario_buttonSkipsEliminatedPlayer() {
+        int numPlayers = 3;
+        int startingChips = 50000;
+        int sb = 50;
+        int bb = 100;
+
+        List<ServerPlayer> players = createPlayers(numPlayers, startingChips);
+
+        ServerGameTable table = new ServerGameTable(0, numPlayers, null, sb, bb, 0);
+        for (int i = 0; i < numPlayers; i++) {
+            table.addPlayer(players.get(i), i);
+        }
+
+        // Hand 1: button starts at seat 0
+        table.startNewHand();
+        assertEquals(0, table.getButton(), "Hand 1: button should be at seat 0");
+
+        // Complete hand 1 quickly (fold to BB)
+        ServerHand hand = (ServerHand) table.getHoldemHand();
+        ServerPlayer current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+        while (current != null && !hand.isUncontested()) {
+            hand.applyPlayerAction(current, PlayerAction.fold());
+            current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+        }
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Eliminate player at seat 1 (remove from table)
+        table.removePlayer(1);
+
+        // Hand 2: button should advance from seat 0, skip empty seat 1, land on seat 2
+        table.startNewHand();
+        assertEquals(2, table.getButton(), "Hand 2: button should skip eliminated seat 1 and land on seat 2");
+
+        // Complete hand 2
+        hand = (ServerHand) table.getHoldemHand();
+        current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+        while (current != null && !hand.isUncontested()) {
+            hand.applyPlayerAction(current, PlayerAction.fold());
+            current = (ServerPlayer) hand.getCurrentPlayerWithInit();
+        }
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // Hand 3: button should advance from seat 2, wrap to seat 0 (skipping empty
+        // seat 1)
+        table.startNewHand();
+        assertEquals(0, table.getButton(),
+                "Hand 3: button should wrap from seat 2 to seat 0, skipping eliminated seat 1");
+    }
+
     // ============================== Helpers ==============================
 
     /**
