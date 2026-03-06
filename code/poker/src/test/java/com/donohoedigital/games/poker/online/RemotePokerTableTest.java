@@ -132,7 +132,7 @@ class RemotePokerTableTest {
     @Test
     void getDisplaySeatIdentityWhenNoHumanPlayer() {
         // No human player → offset is 0 → identity mapping
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             assertThat(table.getDisplaySeat(i)).isEqualTo(i);
         }
     }
@@ -143,7 +143,7 @@ class RemotePokerTableTest {
         ClientPlayer bob = new ClientPlayer(2, "Bob", false);
         table.setRemotePlayer(2, bob);
 
-        for (int i = 0; i < PokerConstants.SEATS; i++) {
+        for (int i = 0; i < ProtocolConstants.SEATS; i++) {
             int display = table.getDisplaySeat(i);
             assertThat(table.getTableSeat(display)).as("round-trip for seat %d", i).isEqualTo(i);
         }
@@ -193,7 +193,7 @@ class RemotePokerTableTest {
     void removePlayerOutOfBoundsIsNoOp() {
         // Should not throw
         table.removePlayer(-1);
-        table.removePlayer(PokerConstants.SEATS);
+        table.removePlayer(ProtocolConstants.SEATS);
         table.removePlayer(100);
     }
 
@@ -203,7 +203,7 @@ class RemotePokerTableTest {
 
     @Test
     void getNumOpenSeatsAllEmpty() {
-        assertThat(table.getNumOpenSeats()).isEqualTo(PokerConstants.SEATS);
+        assertThat(table.getNumOpenSeats()).isEqualTo(ProtocolConstants.SEATS);
     }
 
     @Test
@@ -211,7 +211,7 @@ class RemotePokerTableTest {
         table.setRemotePlayer(0, new ClientPlayer(1, "Alice", true));
         table.setRemotePlayer(3, new ClientPlayer(2, "Bob", false));
 
-        assertThat(table.getNumOpenSeats()).isEqualTo(PokerConstants.SEATS - 2);
+        assertThat(table.getNumOpenSeats()).isEqualTo(ProtocolConstants.SEATS - 2);
     }
 
     // -------------------------------------------------------------------------
@@ -391,7 +391,7 @@ class RemotePokerTableTest {
 
     @Test
     void updateFromStateSetsTableOnPlayers() {
-        ClientPlayer[] players = new ClientPlayer[PokerConstants.SEATS];
+        ClientPlayer[] players = new ClientPlayer[ProtocolConstants.SEATS];
         players[3] = new ClientPlayer(1, "Alice", true);
 
         table.updateFromState(players, 3);

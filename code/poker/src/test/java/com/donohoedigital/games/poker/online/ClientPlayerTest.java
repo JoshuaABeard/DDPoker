@@ -35,9 +35,8 @@
 package com.donohoedigital.games.poker.online;
 
 import com.donohoedigital.games.poker.PlayerProfile;
-import com.donohoedigital.games.poker.engine.Card;
-import com.donohoedigital.games.poker.engine.Hand;
-import com.donohoedigital.games.poker.engine.HandSorted;
+import com.donohoedigital.games.poker.display.ClientCard;
+import com.donohoedigital.games.poker.display.ClientHand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -126,8 +125,8 @@ class ClientPlayerTest {
         void true_whenNotFolded_zeroChips_hasCards() {
             player.setChipCount(0);
             player.setFolded(false);
-            player.getHand().addCard(Card.getCard("Ah"));
-            player.getHand().addCard(Card.getCard("Kh"));
+            player.getHand().addCard(ClientCard.getCard("Ah"));
+            player.getHand().addCard(ClientCard.getCard("Kh"));
 
             assertThat(player.isAllIn()).isTrue();
         }
@@ -136,7 +135,7 @@ class ClientPlayerTest {
         void false_whenFolded() {
             player.setChipCount(0);
             player.setFolded(true);
-            player.getHand().addCard(Card.getCard("Ah"));
+            player.getHand().addCard(ClientCard.getCard("Ah"));
 
             assertThat(player.isAllIn()).isFalse();
         }
@@ -145,7 +144,7 @@ class ClientPlayerTest {
         void false_whenHasChips() {
             player.setChipCount(100);
             player.setFolded(false);
-            player.getHand().addCard(Card.getCard("Ah"));
+            player.getHand().addCard(ClientCard.getCard("Ah"));
 
             assertThat(player.isAllIn()).isFalse();
         }
@@ -168,7 +167,7 @@ class ClientPlayerTest {
 
         @Test
         void true_whenHasCards_notFolded() {
-            player.getHand().addCard(Card.getCard("Ah"));
+            player.getHand().addCard(ClientCard.getCard("Ah"));
             player.setFolded(false);
 
             assertThat(player.isInHand()).isTrue();
@@ -176,7 +175,7 @@ class ClientPlayerTest {
 
         @Test
         void false_whenFolded() {
-            player.getHand().addCard(Card.getCard("Ah"));
+            player.getHand().addCard(ClientCard.getCard("Ah"));
             player.setFolded(true);
 
             assertThat(player.isInHand()).isFalse();
@@ -326,8 +325,8 @@ class ClientPlayerTest {
 
     @Test
     void removeHand_clearsCardsAndSortedHand() {
-        player.getHand().addCard(Card.getCard("Ah"));
-        player.getHand().addCard(Card.getCard("Kh"));
+        player.getHand().addCard(ClientCard.getCard("Ah"));
+        player.getHand().addCard(ClientCard.getCard("Kh"));
         // Force handSorted_ to be populated
         player.getHandSorted();
 
@@ -338,9 +337,9 @@ class ClientPlayerTest {
 
     @Test
     void newHand_createsNewHandOfGivenType() {
-        player.getHand().addCard(Card.getCard("Ah"));
+        player.getHand().addCard(ClientCard.getCard("Ah"));
 
-        Hand h = player.newHand(Hand.TYPE_DEAL_HIGH);
+        ClientHand h = player.newHand(ClientHand.TYPE_DEAL_HIGH);
 
         assertThat(h).isNotNull();
         assertThat(h.size()).isZero();
@@ -348,23 +347,23 @@ class ClientPlayerTest {
     }
 
     @Test
-    void getHandSorted_cachesBetweenCalls() {
-        player.getHand().addCard(Card.getCard("Ah"));
-        player.getHand().addCard(Card.getCard("Kh"));
+    void getClientHand_cachesBetweenCalls() {
+        player.getHand().addCard(ClientCard.getCard("Ah"));
+        player.getHand().addCard(ClientCard.getCard("Kh"));
 
-        HandSorted first = player.getHandSorted();
-        HandSorted second = player.getHandSorted();
+        ClientHand first = player.getHandSorted();
+        ClientHand second = player.getHandSorted();
 
         assertThat(first).isSameAs(second);
     }
 
     @Test
-    void getHandSorted_refreshesWhenHandChanges() {
-        player.getHand().addCard(Card.getCard("Ah"));
-        HandSorted first = player.getHandSorted();
+    void getClientHand_refreshesWhenHandChanges() {
+        player.getHand().addCard(ClientCard.getCard("Ah"));
+        ClientHand first = player.getHandSorted();
 
-        player.getHand().addCard(Card.getCard("Kh"));
-        HandSorted second = player.getHandSorted();
+        player.getHand().addCard(ClientCard.getCard("Kh"));
+        ClientHand second = player.getHandSorted();
 
         assertThat(first).isNotSameAs(second);
     }

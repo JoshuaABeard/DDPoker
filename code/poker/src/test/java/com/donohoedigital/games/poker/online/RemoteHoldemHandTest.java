@@ -210,8 +210,8 @@ class RemoteHoldemHandTest {
             hand.updatePlayerBet(1, 150);
             ClientPlayer alice = new ClientPlayer(1, "Alice", true);
 
-            assertThat(hand.getBet(alice, BettingRound.PRE_FLOP.toLegacy())).isEqualTo(150);
-            assertThat(hand.getBet(alice, BettingRound.FLOP.toLegacy())).isEqualTo(150);
+            assertThat(hand.getBet(alice, ClientBettingRound.PRE_FLOP.toLegacy())).isEqualTo(150);
+            assertThat(hand.getBet(alice, ClientBettingRound.FLOP.toLegacy())).isEqualTo(150);
         }
     }
 
@@ -513,25 +513,20 @@ class RemoteHoldemHandTest {
         }
 
         @Test
-        void getDeckThrowsUnsupportedOperationException() {
-            assertThatThrownBy(() -> hand.getDeck()).isInstanceOf(UnsupportedOperationException.class);
-        }
-
-        @Test
         void getMuckThrowsUnsupportedOperationException() {
             assertThatThrownBy(() -> hand.getMuck()).isInstanceOf(UnsupportedOperationException.class);
         }
 
         @Test
         void getRoundForDisplayReturnsLegacyInt() {
-            hand.updateRound(BettingRound.FLOP);
-            assertThat(hand.getRoundForDisplay()).isEqualTo(BettingRound.FLOP.toLegacy());
+            hand.updateRound(ClientBettingRound.FLOP);
+            assertThat(hand.getRoundForDisplay()).isEqualTo(ClientBettingRound.FLOP.toLegacy());
         }
 
         @Test
         void getCommunityForDisplaySameAsCommunity() {
-            Hand community = new Hand();
-            community.addCard(Card.getCard("Ah"));
+            ClientHand community = ClientHand.empty();
+            community.addCard(ClientCard.getCard("Ah"));
             hand.updateCommunity(community);
 
             assertThat(hand.getCommunityForDisplay()).isSameAs(hand.getCommunity());
@@ -539,22 +534,22 @@ class RemoteHoldemHandTest {
 
         @Test
         void getCommunitySortedCachedUntilCommunityChanges() {
-            Hand community = new Hand();
-            community.addCard(Card.getCard("Kd"));
-            community.addCard(Card.getCard("2c"));
-            community.addCard(Card.getCard("Ah"));
+            ClientHand community = ClientHand.empty();
+            community.addCard(ClientCard.getCard("Kd"));
+            community.addCard(ClientCard.getCard("2c"));
+            community.addCard(ClientCard.getCard("Ah"));
             hand.updateCommunity(community);
 
-            HandSorted sorted1 = hand.getCommunitySorted();
-            HandSorted sorted2 = hand.getCommunitySorted();
+            ClientHand sorted1 = hand.getCommunitySorted();
+            ClientHand sorted2 = hand.getCommunitySorted();
             assertThat(sorted1).isSameAs(sorted2); // cached
 
             // Change community — should produce new sorted hand
-            Hand newCommunity = new Hand();
-            newCommunity.addCard(Card.getCard("3s"));
+            ClientHand newCommunity = ClientHand.empty();
+            newCommunity.addCard(ClientCard.getCard("3s"));
             hand.updateCommunity(newCommunity);
 
-            HandSorted sorted3 = hand.getCommunitySorted();
+            ClientHand sorted3 = hand.getCommunitySorted();
             assertThat(sorted3).isNotSameAs(sorted1);
         }
     }
