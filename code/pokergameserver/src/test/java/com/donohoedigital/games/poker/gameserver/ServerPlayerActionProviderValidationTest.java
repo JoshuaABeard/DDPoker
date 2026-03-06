@@ -56,6 +56,8 @@ class ServerPlayerActionProviderValidationTest {
                 maxRaise, 0);
     }
 
+    // Poker rule: you can't bet more than your chips; maxBet represents the
+    // player's remaining stack, so exceeding it must be clamped to all-in.
     @Test
     void betExceedsMax_clampsToMax() {
         ActionOptions opts = options(false, false, true, false, true, 0, 100, 500, 0, 0);
@@ -80,6 +82,9 @@ class ServerPlayerActionProviderValidationTest {
         assertThat(result.amount()).isEqualTo(300);
     }
 
+    // Poker rule: you can't check when facing a bet — the player must call,
+    // raise, or fold. Submitting CHECK when there's an outstanding bet converts
+    // to FOLD.
     @Test
     void checkWhenCannotCheck_folds() {
         ActionOptions opts = options(false, true, false, false, true, 100, 0, 0, 0, 0);
@@ -115,6 +120,8 @@ class ServerPlayerActionProviderValidationTest {
         assertThat(result.actionType()).isEqualTo(ActionType.FOLD);
     }
 
+    // Poker rule: a raise must be at least the size of the previous raise
+    // (the minimum raise). Submitting below that floor clamps up to the minimum.
     @Test
     void raiseBelowMin_clampsToMin() {
         ActionOptions opts = options(false, false, false, true, true, 0, 0, 0, 200, 1000);
@@ -131,6 +138,7 @@ class ServerPlayerActionProviderValidationTest {
         assertThat(result.amount()).isEqualTo(1000);
     }
 
+    // Poker rule: fold is always valid regardless of game state.
     @Test
     void foldAlwaysValid() {
         ActionOptions opts = options(true, true, true, true, true, 100, 100, 500, 200, 1000);
@@ -143,5 +151,41 @@ class ServerPlayerActionProviderValidationTest {
         ActionOptions opts = options(false, false, false, false, true, 0, 0, 0, 0, 0);
         PlayerAction result = provider.validateAction(PlayerAction.bet(200), opts);
         assertThat(result.actionType()).isEqualTo(ActionType.FOLD);
+    }
+
+    // Poker rule: a player may go all-in even when their remaining stack is
+    // below the normal minimum raise. The engine signals this by setting
+    // minRaise == maxRaise == the player's stack. The raise must be accepted
+    // (not converted to fold).
+    @Test
+    void allInBelowNormalMinRaise_accepted() {
+        // Player has only 80 chips but normal min raise would be 200.
+        // Engine sets minRaise = maxRaise = 80 (all-in).
+        ActionOptions opts = options(false, false, false, true, true, 0, 0, 0, 80, 80);
+        PlayerAction result = provider.validateAction(PlayerAction.raise(80), opts);
+        assertThat(result.actionType()).isEqualTo(ActionType.RAISE);
+        assertThat(result.amount()).isEqualTo(80);
+    }
+
+    // Poker rule: fold is always valid — even if the options don't explicitly
+    // list canFold (edge case). validateAction converts to fold via the else
+    // branch, so the action type is still FOLD.
+    @Test
+    void foldWhenCanFoldFalse_stillFolds() {
+        ActionOptions opts = options(true, false, false, false, false, 0, 0, 0, 0, 0);
+        PlayerAction result = provider.validateAction(PlayerAction.fold(), opts);
+        assertThat(result.actionType()).isEqualTo(ActionType.FOLD);
+    }
+
+    // Poker rule: all-in bet — when maxBet equals minBet the player is putting
+    // in their entire stack. Even if the submitted amount is below that, it
+    // clamps up to the all-in amount.
+    @Test
+    void allInBet_clampedToStack() {
+        // Player can only bet exactly 150 (their entire stack).
+        ActionOptions opts = options(false, false, true, false, true, 0, 150, 150, 0, 0);
+        PlayerAction result = provider.validateAction(PlayerAction.bet(50), opts);
+        assertThat(result.actionType()).isEqualTo(ActionType.BET);
+        assertThat(result.amount()).isEqualTo(150);
     }
 }
