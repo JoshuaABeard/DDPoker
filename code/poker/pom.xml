@@ -114,16 +114,6 @@
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-data-jpa</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-logging</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
       <exclusions>
         <exclusion>
@@ -142,12 +132,22 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <!-- Required by embedded game server (optional deps in pokergameserver) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-logging</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <scope>runtime</scope>
     </dependency>
-    <!-- Spring Boot Mail (optional in pokergameserver, required here for embedded server startup) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-mail</artifactId>
@@ -157,29 +157,6 @@
           <artifactId>spring-boot-starter-logging</artifactId>
         </exclusion>
       </exclusions>
-    </dependency>
-    <!-- JWT (for EmbeddedGameServer.getLocalUserJwt()) -->
-    <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-api</artifactId>
-      <version>0.12.5</version>
-    </dependency>
-    <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-impl</artifactId>
-      <version>0.12.5</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.jsonwebtoken</groupId>
-      <artifactId>jjwt-jackson</artifactId>
-      <version>0.12.5</version>
-      <scope>runtime</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.donohoedigital</groupId>
-      <artifactId>db</artifactId>
-      <version>3.3.0-CommunityEdition</version>
     </dependency>
     <!-- JUnit 5 (Jupiter) -->
     <dependency>
@@ -311,12 +288,17 @@
             <configuration>
               <rules>
                 <bannedDependencies>
+                  <!-- searchTransitive stays false: pokergameserver legitimately
+                       brings pokerengine/pokergamecore transitively for the embedded
+                       server. This rule prevents adding them as direct dependencies.
+                       Compile-time usage is enforced by code review + zero imports. -->
                   <searchTransitive>false</searchTransitive>
                   <excludes>
                     <exclude>*:pokergamecore</exclude>
                     <exclude>*:pokerengine</exclude>
+                    <exclude>*:db</exclude>
                   </excludes>
-                  <message>poker (desktop client) must not depend on pokergamecore or pokerengine — all game logic is server-side</message>
+                  <message>poker (desktop client) must not depend on pokergamecore, pokerengine, or db — all game logic and persistence is server-side</message>
                 </bannedDependencies>
               </rules>
             </configuration>
