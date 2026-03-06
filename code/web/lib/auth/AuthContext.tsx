@@ -62,7 +62,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (storedUser) {
         // Verify the session is still valid and get current admin status from API
         const authResponse = await authApi.getCurrentUser()
-        if (authResponse && authResponse.success && authResponse.username) {
+        // The /auth/me endpoint returns a ProfileResponse (no 'success' wrapper),
+        // while /auth/login returns an AuthResponse (with 'success'). Check both.
+        const isValid = authResponse && authResponse.username &&
+          (authResponse.success === undefined || authResponse.success === true)
+        if (isValid && authResponse.username) {
           setState({
             user: {
               username: authResponse.username,
