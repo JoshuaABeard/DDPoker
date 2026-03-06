@@ -196,7 +196,6 @@ public class PokerClientConstants {
     public static final String TESTING_AUTOPILOT_INIT = "settings.debug.autopilot";
     public static final String TESTING_AUTOPILOT = "settings.debug.autopilot.on";
     public static final String TESTING_FAST_SAVE = "settings.debug.fastsave";
-    public static final String TESTING_TEST_CASE = "settings.debug.testcase";
     public static final String TESTING_ONLINE_AUTO_DEAL_OFF = "settings.debug.onlineautodealoff";
     public static final String TESTING_ALLOW_CHEAT_ONLINE = "settings.debug.cheatonline";
     public static final String TESTING_CHAT_PERF = "settings.debug.chat.perf";

@@ -399,19 +399,6 @@
     </paramlist>
   </phase>
 
-  <phase name="CreateTestCase" extends="DisplayInfoMessage"
-         class="com.donohoedigital.games.poker.ai.phase.CreateTestCase" transient="true">
-    <param name="style" strvalue="OptionsDialog"/>
-    <param name="dialog-windowtitle-prop" strvalue="msg.windowtitle.createTestCase"/>
-    <param name="dialog-window-close-activates-button" strvalue="cancelpref"/>
-    <param name="default-button" strvalue="okay"/>
-    <paramlist name="buttons">
-      <strvalue>results</strvalue>
-      <strvalue>okay</strvalue>
-      <strvalue>cancelpref</strvalue>
-    </paramlist>
-  </phase>
-
   <phase name="ChangePlayerNameDialog" extends="DisplayInfoMessage"
          class="com.donohoedigital.games.poker.ChangePlayerNameDialog" transient="true">
     <param name="style" strvalue="OptionsDialog"/>
