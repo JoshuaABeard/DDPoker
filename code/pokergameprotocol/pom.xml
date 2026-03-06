@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================================
+  DD Poker - Source Code
+  Copyright (c) 2026 DD Poker Community
+
+  This program is free software: you can redistribute it and/or modify it under the terms
+  of the GNU General Public License as published by the Free Software Foundation, either
+  version 3 of the License, or (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+  without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+  See the GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License along with this program.
+  If not, see <http://www.gnu.org/licenses/>.
+  ============================================================================================
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.donohoedigital</groupId>
+        <artifactId>all</artifactId>
+        <version>3.3.0-CommunityEdition</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>pokergameprotocol</artifactId>
+    <packaging>jar</packaging>
+    <version>3.3.0-CommunityEdition</version>
+    <name>DD Poker Game Protocol</name>
+    <description>Self-contained DTOs and message types for client-server communication</description>
+
+    <properties>
+        <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
+    </properties>
+
+    <dependencies>
+        <!-- Jackson annotations for JSON serialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.18.2</version>
+        </dependency>
+
+        <!-- JUnit 5 (Jupiter) -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>5.11.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Enforcer: Ban poker engine dependencies -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${maven-enforcer-plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>ban-engine-dependencies</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <bannedDependencies>
+                                    <searchTransitive>false</searchTransitive>
+                                    <excludes>
+                                        <exclude>*:pokerengine</exclude>
+                                        <exclude>*:pokergamecore</exclude>
+                                        <exclude>*:pokergameserver</exclude>
+                                    </excludes>
+                                    <message>pokergameprotocol must not depend on pokerengine, pokergamecore, or pokergameserver — protocol DTOs must be self-contained</message>
+                                </bannedDependencies>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

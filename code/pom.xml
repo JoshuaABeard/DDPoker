@@ -53,6 +53,7 @@
 <module>gametools</module>
     <module>pokerengine</module>
     <module>pokergamecore</module>
+    <module>pokergameprotocol</module>
     <module>pokergameserver</module>
     <module>poker</module>
     <module>pokerserver</module>
