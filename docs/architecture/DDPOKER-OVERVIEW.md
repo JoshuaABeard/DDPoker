@@ -43,10 +43,10 @@ The project is a Maven multi-module build with 19 modules. Build order (later mo
 | `gameserver`     | Core game server                                   | jar      |
 | `gametools`      | Game building tools (border/territory managers)    | jar      |
 | `ddpoker`        | Classes in `com.ddpoker` package                   | jar      |
-| `pokerengine`    | Core poker utilities (shared client/server)        | jar      |
+| `pokerengine`    | Core poker utilities, shared types, hand evaluation (shared client/server) | jar      |
 | `pokergamecore`  | Server-side game engine (extracted from client)    | jar      |
 | `pokernetwork`   | Poker networking infrastructure (shared)           | jar      |
-| `poker`          | DD Poker UI / desktop client                       | jar      |
+| `poker`          | DD Poker UI / desktop client (pure rendering layer) | jar      |
 | `pokerserver`    | DD Poker backend server                            | jar      |
 | `api`            | REST API (Spring Boot)                             | jar      |
 
