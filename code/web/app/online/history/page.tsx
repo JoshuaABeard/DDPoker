@@ -13,7 +13,7 @@ import { FilterForm } from '@/components/filters/FilterForm'
 import { tournamentApi } from '@/lib/api'
 import { mapTournamentEntry } from '@/lib/mappers'
 import { toBackendPage, buildPaginationResult } from '@/lib/pagination'
-import type { TournamentStatsDtoDto } from '@/lib/types'
+import type { TournamentStatsDto } from '@/lib/types'
 
 export const metadata: Metadata = {
   title: 'Tournament History - DD Poker',

@@ -267,7 +267,7 @@ public class AuthService {
 
         boolean emailVerified = profile.isEmailVerified();
         ProfileResponse profileDto = new ProfileResponse(profile.getId(), username, profile.getEmail(), emailVerified,
-                false, profile.isRetired(),
+                profile.isAdmin(), profile.isRetired(),
                 profile.getCreateDate() != null ? profile.getCreateDate().toString() : null);
         String token = tokenProvider.generateToken(username, profile.getId(), rememberMe, emailVerified);
         return new LoginResponse(true, profileDto, token, null, null);
@@ -282,7 +282,7 @@ public class AuthService {
      */
     public ProfileResponse getCurrentUser(Long profileId) {
         return profileRepository.findById(profileId)
-                .map(p -> new ProfileResponse(p.getId(), p.getName(), p.getEmail(), p.isEmailVerified(), false,
+                .map(p -> new ProfileResponse(p.getId(), p.getName(), p.getEmail(), p.isEmailVerified(), p.isAdmin(),
                         p.isRetired(), p.getCreateDate() != null ? p.getCreateDate().toString() : null))
                 .orElse(null);
     }

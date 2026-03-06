@@ -40,6 +40,7 @@ test.describe('Account Management', () => {
   test.beforeAll(async () => {
     await api.resetDatabase()
     await api.createVerifiedUser('acctuser', 'password123', 'acctuser@example.com')
+    await api.createVerifiedUser('emailuser', 'password123', 'emailuser@example.com')
     await api.registerUser('unverifiedacct', 'password123', 'unverifiedacct@example.com')
   })
 
@@ -102,7 +103,7 @@ test.describe('Account Management', () => {
   })
 
   test('change email form submits and shows feedback', async ({ page }) => {
-    await ui.login(page, 'acctuser', 'password123')
+    await ui.login(page, 'emailuser', 'password123')
     await page.goto('/account')
 
     await page.getByPlaceholder('New email address').fill('newemail@example.com')
