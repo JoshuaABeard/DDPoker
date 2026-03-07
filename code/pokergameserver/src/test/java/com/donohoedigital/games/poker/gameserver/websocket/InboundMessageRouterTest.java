@@ -21,6 +21,7 @@ import com.donohoedigital.games.poker.engine.PlayerAction;
 import com.donohoedigital.games.poker.gameserver.GameInstance;
 import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
+import com.donohoedigital.games.poker.gameserver.GameStateSnapshot;
 import com.donohoedigital.games.poker.protocol.message.ServerMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -298,6 +299,279 @@ class InboundMessageRouterTest {
 
         verify(gameInstance).onPlayerAction(eq(PLAYER_PROFILE_ID), any(PlayerAction.class));
         verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    // === Observer Restrictions ===
+
+    @Test
+    void handleMessage_observer_canSendChat() throws Exception {
+        WebSocketSession observerSession = mock(WebSocketSession.class);
+        when(observerSession.isOpen()).thenReturn(true);
+        when(observerSession.getId()).thenReturn("obs-sess");
+        PlayerConnection observerConnection = new PlayerConnection(observerSession, 100L, "observer", GAME_ID,
+                objectMapper, true);
+        connectionManager.addConnection(GAME_ID, 100L, observerConnection);
+
+        String json = "{\"type\":\"CHAT\",\"sequenceNumber\":1,\"data\":{\"message\":\"Hello!\",\"tableChat\":true}}";
+        router.handleMessage(observerConnection, json);
+
+        // Observer should NOT get an error for chat
+        verify(observerSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_observer_cannotSendPlayerAction() throws Exception {
+        WebSocketSession observerSession = mock(WebSocketSession.class);
+        when(observerSession.isOpen()).thenReturn(true);
+        when(observerSession.getId()).thenReturn("obs-sess");
+        PlayerConnection observerConnection = new PlayerConnection(observerSession, 100L, "observer", GAME_ID,
+                objectMapper, true);
+        connectionManager.addConnection(GAME_ID, 100L, observerConnection);
+
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"FOLD\",\"amount\":0}}";
+        router.handleMessage(observerConnection, json);
+
+        verify(observerSession).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+        verify(gameInstance, never()).onPlayerAction(eq(100L), any(PlayerAction.class));
+    }
+
+    @Test
+    void handleMessage_observer_cannotSitOut() throws Exception {
+        WebSocketSession observerSession = mock(WebSocketSession.class);
+        when(observerSession.isOpen()).thenReturn(true);
+        when(observerSession.getId()).thenReturn("obs-sess");
+        PlayerConnection observerConnection = new PlayerConnection(observerSession, 100L, "observer", GAME_ID,
+                objectMapper, true);
+        connectionManager.addConnection(GAME_ID, 100L, observerConnection);
+
+        String json = "{\"type\":\"SIT_OUT\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(observerConnection, json);
+
+        verify(observerSession).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+        verify(gameInstance, never()).setSittingOut(anyLong(), anyBoolean());
+    }
+
+    // === Sit Out / Come Back ===
+
+    @Test
+    void handleMessage_sitOut_dispatches() throws Exception {
+        String json = "{\"type\":\"SIT_OUT\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).setSittingOut(PLAYER_PROFILE_ID, true);
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_comeBack_dispatches() throws Exception {
+        String json = "{\"type\":\"COME_BACK\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).setSittingOut(PLAYER_PROFILE_ID, false);
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    // === Rebuy / Addon / Never Broke Decisions ===
+
+    @Test
+    void handleMessage_rebuyDecision_dispatches() throws Exception {
+        String json = "{\"type\":\"REBUY_DECISION\",\"sequenceNumber\":1,\"data\":{\"accept\":true}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).submitRebuyDecision(Math.toIntExact(PLAYER_PROFILE_ID), true);
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_rebuyDecision_decline() throws Exception {
+        String json = "{\"type\":\"REBUY_DECISION\",\"sequenceNumber\":1,\"data\":{\"accept\":false}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).submitRebuyDecision(Math.toIntExact(PLAYER_PROFILE_ID), false);
+    }
+
+    @Test
+    void handleMessage_addonDecision_dispatches() throws Exception {
+        String json = "{\"type\":\"ADDON_DECISION\",\"sequenceNumber\":1,\"data\":{\"accept\":true}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).submitAddonDecision(Math.toIntExact(PLAYER_PROFILE_ID), true);
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_neverBrokeDecision_dispatches() throws Exception {
+        String json = "{\"type\":\"NEVER_BROKE_DECISION\",\"sequenceNumber\":1,\"data\":{\"accept\":false}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).submitNeverBrokeDecision(Math.toIntExact(PLAYER_PROFILE_ID), false);
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_rebuyDecision_invalidData_sendsError() throws Exception {
+        String json = "{\"type\":\"REBUY_DECISION\",\"sequenceNumber\":1,\"data\":\"notAnObject\"}";
+        router.handleMessage(connection, json);
+
+        verify(session).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+        verify(gameInstance, never()).submitRebuyDecision(anyInt(), anyBoolean());
+    }
+
+    // === Continue Runout ===
+
+    @Test
+    void handleMessage_continueRunout_ownerSucceeds() throws Exception {
+        WebSocketSession ownerSession = mock(WebSocketSession.class);
+        when(ownerSession.isOpen()).thenReturn(true);
+        when(ownerSession.getId()).thenReturn("owner-sess");
+        PlayerConnection ownerConnection = new PlayerConnection(ownerSession, OWNER_PROFILE_ID, "owner", GAME_ID,
+                objectMapper);
+        connectionManager.addConnection(GAME_ID, OWNER_PROFILE_ID, ownerConnection);
+
+        String json = "{\"type\":\"CONTINUE_RUNOUT\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(ownerConnection, json);
+
+        verify(gameInstance).submitContinue();
+        verify(ownerSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_continueRunout_nonOwnerForbidden() throws Exception {
+        String json = "{\"type\":\"CONTINUE_RUNOUT\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(connection, json);
+
+        verify(session).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+        verify(gameInstance, never()).submitContinue();
+    }
+
+    // === Request State ===
+
+    @Test
+    void handleMessage_requestState_dispatches() throws Exception {
+        GameStateSnapshot mockSnapshot = mock(GameStateSnapshot.class);
+        when(gameInstance.getGameStateSnapshot(PLAYER_PROFILE_ID)).thenReturn(mockSnapshot);
+
+        String json = "{\"type\":\"REQUEST_STATE\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).getGameStateSnapshot(PLAYER_PROFILE_ID);
+        verify(session, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_requestState_nullSnapshot_noResponse() throws Exception {
+        when(gameInstance.getGameStateSnapshot(PLAYER_PROFILE_ID)).thenReturn(null);
+
+        String json = "{\"type\":\"REQUEST_STATE\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).getGameStateSnapshot(PLAYER_PROFILE_ID);
+        // No message should be sent when snapshot is null
+        verify(session, never()).sendMessage(any());
+    }
+
+    // === Missing Type / Unknown Game ===
+
+    @Test
+    void handleMessage_missingType_sendsError() throws Exception {
+        String json = "{\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(connection, json);
+
+        verify(session).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+    }
+
+    @Test
+    void handleMessage_unknownGame_silentlyIgnored() throws Exception {
+        when(gameInstanceManager.getGame("nonexistent")).thenReturn(null);
+        PlayerConnection badConnection = new PlayerConnection(session, PLAYER_PROFILE_ID, "testuser", "nonexistent",
+                objectMapper);
+
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"FOLD\",\"amount\":0}}";
+        router.handleMessage(badConnection, json);
+
+        verify(gameInstance, never()).onPlayerAction(anyLong(), any(PlayerAction.class));
+        verify(session, never()).sendMessage(any());
+    }
+
+    // === Sequence Number Edge Cases ===
+
+    @Test
+    void handleMessage_duplicateSequenceNumber_rejected() throws Exception {
+        connection.setLastSequenceNumber(5);
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":5,\"data\":{\"action\":\"FOLD\",\"amount\":0}}";
+
+        router.handleMessage(connection, json);
+
+        verify(session).sendMessage(argThat(msg -> isMessageWithType(msg, "ERROR")));
+        verify(gameInstance, never()).onPlayerAction(anyLong(), any(PlayerAction.class));
+    }
+
+    // === Player Action Types ===
+
+    @Test
+    void handleMessage_checkAction_dispatches() throws Exception {
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"CHECK\",\"amount\":0}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).onPlayerAction(eq(PLAYER_PROFILE_ID), argThat(a -> a.actionType().name().equals("CHECK")));
+    }
+
+    @Test
+    void handleMessage_callAction_dispatches() throws Exception {
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"CALL\",\"amount\":0}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).onPlayerAction(eq(PLAYER_PROFILE_ID), argThat(a -> a.actionType().name().equals("CALL")));
+    }
+
+    @Test
+    void handleMessage_betAction_dispatches() throws Exception {
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"BET\",\"amount\":100}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).onPlayerAction(eq(PLAYER_PROFILE_ID), argThat(a -> a.actionType().name().equals("BET")));
+    }
+
+    @Test
+    void handleMessage_raiseAction_dispatches() throws Exception {
+        String json = "{\"type\":\"PLAYER_ACTION\",\"sequenceNumber\":1,\"data\":{\"action\":\"RAISE\",\"amount\":200}}";
+        router.handleMessage(connection, json);
+
+        verify(gameInstance).onPlayerAction(eq(PLAYER_PROFILE_ID), argThat(a -> a.actionType().name().equals("RAISE")));
+    }
+
+    // === Admin Pause/Resume Success ===
+
+    @Test
+    void handleMessage_adminPause_ownerSucceeds() throws Exception {
+        WebSocketSession ownerSession = mock(WebSocketSession.class);
+        when(ownerSession.isOpen()).thenReturn(true);
+        when(ownerSession.getId()).thenReturn("owner-sess");
+        PlayerConnection ownerConnection = new PlayerConnection(ownerSession, OWNER_PROFILE_ID, "owner", GAME_ID,
+                objectMapper);
+        connectionManager.addConnection(GAME_ID, OWNER_PROFILE_ID, ownerConnection);
+
+        String json = "{\"type\":\"ADMIN_PAUSE\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(ownerConnection, json);
+
+        verify(gameInstance).pauseAsUser(OWNER_PROFILE_ID);
+        verify(ownerSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
+    }
+
+    @Test
+    void handleMessage_adminResume_ownerSucceeds() throws Exception {
+        WebSocketSession ownerSession = mock(WebSocketSession.class);
+        when(ownerSession.isOpen()).thenReturn(true);
+        when(ownerSession.getId()).thenReturn("owner-sess");
+        PlayerConnection ownerConnection = new PlayerConnection(ownerSession, OWNER_PROFILE_ID, "owner", GAME_ID,
+                objectMapper);
+        connectionManager.addConnection(GAME_ID, OWNER_PROFILE_ID, ownerConnection);
+
+        String json = "{\"type\":\"ADMIN_RESUME\",\"sequenceNumber\":1,\"data\":{}}";
+        router.handleMessage(ownerConnection, json);
+
+        verify(gameInstance).resumeAsUser(OWNER_PROFILE_ID);
+        verify(ownerSession, never()).sendMessage(argThat(msg -> isErrorMessage(msg)));
     }
 
     // ============================================================================================

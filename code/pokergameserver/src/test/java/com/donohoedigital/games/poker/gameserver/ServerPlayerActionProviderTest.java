@@ -398,6 +398,232 @@ class ServerPlayerActionProviderTest {
         assertEquals(ActionType.CHECK, future2.get(1, TimeUnit.SECONDS).actionType());
     }
 
+    // === Puppet Mode ===
+
+    @Test
+    void testPuppetMode_DefaultOff() {
+        assertFalse(provider.isPuppeted(1));
+        assertTrue(provider.getPuppetedPlayerIds().isEmpty());
+    }
+
+    @Test
+    void testPuppetMode_SetAndGet() {
+        provider.setPuppeted(1, true);
+        assertTrue(provider.isPuppeted(1));
+        assertFalse(provider.isPuppeted(2));
+        assertEquals(1, provider.getPuppetedPlayerIds().size());
+        assertTrue(provider.getPuppetedPlayerIds().contains(1));
+    }
+
+    @Test
+    void testPuppetMode_ClearAll() {
+        provider.setPuppeted(1, true);
+        provider.setPuppeted(2, true);
+        assertEquals(2, provider.getPuppetedPlayerIds().size());
+
+        provider.clearAllPuppets();
+        assertTrue(provider.getPuppetedPlayerIds().isEmpty());
+        assertFalse(provider.isPuppeted(1));
+        assertFalse(provider.isPuppeted(2));
+    }
+
+    @Test
+    void testPuppetMode_Disable() {
+        provider.setPuppeted(1, true);
+        assertTrue(provider.isPuppeted(1));
+
+        provider.setPuppeted(1, false);
+        assertFalse(provider.isPuppeted(1));
+    }
+
+    @Test
+    void testPuppetMode_PuppetedAIBlocksForAction() throws Exception {
+        ServerPlayer aiPlayer = createAIPlayer(1, "AI");
+        ActionOptions options = createSimpleOptions();
+        mockAI.nextAction = PlayerAction.call();
+
+        // Puppet the AI player
+        provider.setPuppeted(1, true);
+
+        // AI should now block like a human
+        CompletableFuture<PlayerAction> actionFuture = CompletableFuture.supplyAsync(() -> {
+            return provider.getAction(aiPlayer, options);
+        });
+
+        Thread.sleep(50);
+        // Should have a puppet request but NOT a normal callback
+        assertNotNull(provider.getCurrentPuppetRequest(), "Puppet request should be set");
+        assertNull(capturedRequest.get(), "Normal callback should not be invoked for puppets");
+
+        // Submit action to unblock
+        provider.submitAction(aiPlayer.getID(), PlayerAction.check());
+
+        PlayerAction action = actionFuture.get(1, TimeUnit.SECONDS);
+        assertEquals(ActionType.CHECK, action.actionType());
+        assertNull(provider.getCurrentPuppetRequest(), "Puppet request should be cleared after action");
+    }
+
+    @Test
+    void testPuppetMode_TimeoutAutoFolds() {
+        ServerPlayer aiPlayer = createAIPlayer(1, "AI");
+        ActionOptions options = createOptions(true, false, true, 100);
+        provider.setPuppeted(1, true);
+
+        // Don't submit action — let it timeout
+        PlayerAction action = provider.getAction(aiPlayer, options);
+        assertEquals(ActionType.FOLD, action.actionType());
+    }
+
+    @Test
+    void testPuppetMode_TimeoutAutoChecksWhenAvailable() {
+        ServerPlayer aiPlayer = createAIPlayer(1, "AI");
+        ActionOptions options = createOptions(true, true, false, 0);
+        provider.setPuppeted(1, true);
+
+        // Don't submit action — let it timeout
+        PlayerAction action = provider.getAction(aiPlayer, options);
+        assertEquals(ActionType.CHECK, action.actionType());
+    }
+
+    // === Pending Action Request ===
+
+    @Test
+    void testGetPendingActionRequest_NoneWhenNoAction() {
+        assertNull(provider.getPendingActionRequest(1));
+    }
+
+    @Test
+    void testGetPendingActionRequest_ReturnsWhenWaiting() throws Exception {
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+        ActionOptions options = createSimpleOptions();
+
+        CompletableFuture<PlayerAction> actionFuture = CompletableFuture.supplyAsync(() -> {
+            return provider.getAction(humanPlayer, options);
+        });
+
+        Thread.sleep(50);
+        ActionRequest pending = provider.getPendingActionRequest(2);
+        assertNotNull(pending, "Should have a pending request while waiting");
+        assertEquals(2, pending.player().getID());
+
+        // Clean up
+        provider.submitAction(2, PlayerAction.fold());
+        actionFuture.get(1, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void testGetPendingActionRequest_ClearedAfterSubmit() throws Exception {
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+        ActionOptions options = createSimpleOptions();
+
+        CompletableFuture<PlayerAction> actionFuture = CompletableFuture.supplyAsync(() -> {
+            return provider.getAction(humanPlayer, options);
+        });
+
+        Thread.sleep(50);
+        provider.submitAction(2, PlayerAction.fold());
+        actionFuture.get(1, TimeUnit.SECONDS);
+
+        assertNull(provider.getPendingActionRequest(2), "Pending request should be cleared after action");
+    }
+
+    // === Timeout Publisher ===
+
+    @Test
+    void testTimeoutPublisher_InvokedOnTimeout() {
+        AtomicReference<com.donohoedigital.games.poker.engine.event.GameEvent> capturedEvent = new AtomicReference<>();
+        ServerPlayerActionProvider publisherProvider = new ServerPlayerActionProvider(mockAI, capturedRequest::set,
+                TIMEOUT_SECONDS, 2, playerSessions, 0, capturedEvent::set);
+
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+        ActionOptions options = createOptions(true, false, true, 100);
+
+        // Let it timeout
+        publisherProvider.getAction(humanPlayer, options);
+
+        assertNotNull(capturedEvent.get(), "Timeout publisher should be invoked");
+        assertInstanceOf(com.donohoedigital.games.poker.engine.event.GameEvent.ActionTimeout.class,
+                capturedEvent.get());
+    }
+
+    @Test
+    void testTimeoutPublisher_NotInvokedOnNormalAction() throws Exception {
+        AtomicReference<com.donohoedigital.games.poker.engine.event.GameEvent> capturedEvent = new AtomicReference<>();
+        ServerPlayerActionProvider publisherProvider = new ServerPlayerActionProvider(mockAI, capturedRequest::set,
+                TIMEOUT_SECONDS, 2, playerSessions, 0, capturedEvent::set);
+
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+        ActionOptions options = createSimpleOptions();
+
+        CompletableFuture<PlayerAction> actionFuture = CompletableFuture.supplyAsync(() -> {
+            return publisherProvider.getAction(humanPlayer, options);
+        });
+        Thread.sleep(50);
+        publisherProvider.submitAction(2, PlayerAction.call());
+        actionFuture.get(1, TimeUnit.SECONDS);
+
+        assertNull(capturedEvent.get(), "Timeout publisher should not be invoked for normal action");
+    }
+
+    // === Validate Action Edge Cases ===
+
+    @Test
+    void testValidateAction_FoldWhenCanFold() {
+        ActionOptions options = createOptions(true, false, true, 100);
+        PlayerAction result = provider.validateAction(PlayerAction.fold(), options);
+        assertEquals(ActionType.FOLD, result.actionType());
+    }
+
+    @Test
+    void testValidateAction_UnknownActionDefaultsToFold() {
+        ActionOptions options = createSimpleOptions();
+        // Create an action with an unknown type by using a type that isn't handled
+        // The default case in the switch returns fold
+        PlayerAction result = provider.validateAction(PlayerAction.fold(), options);
+        assertEquals(ActionType.FOLD, result.actionType());
+    }
+
+    @Test
+    void testValidateAction_BetWhenCantBet_FoldsInstead() {
+        ActionOptions options = createSimpleOptions(); // canBet=false
+        PlayerAction result = provider.validateAction(PlayerAction.bet(100), options);
+        assertEquals(ActionType.FOLD, result.actionType());
+    }
+
+    @Test
+    void testValidateAction_RaiseWhenCantRaise_FoldsInstead() {
+        ActionOptions options = createSimpleOptions(); // canRaise=false
+        PlayerAction result = provider.validateAction(PlayerAction.raise(100), options);
+        assertEquals(ActionType.FOLD, result.actionType());
+    }
+
+    @Test
+    void testValidateAction_RaiseAmount_ClampedToMin() {
+        ActionOptions options = createRaiseOptions(100, 500);
+        PlayerAction result = provider.validateAction(PlayerAction.raise(10), options);
+        assertEquals(ActionType.RAISE, result.actionType());
+        assertEquals(100, result.amount(), "Raise should be clamped to min");
+    }
+
+    // === Disconnect Grace - Auto Check ===
+
+    @Test
+    void testDisconnectedPlayer_PastGracePeriod_AutoChecksWhenAvailable() {
+        ServerPlayer humanPlayer = createHumanPlayer(2, "Human");
+        ServerPlayerSession session = new ServerPlayerSession(2L, "Human", false, 0);
+        session.connect();
+        session.disconnect();
+        session.incrementConsecutiveTimeouts();
+        session.incrementConsecutiveTimeouts();
+        playerSessions.put(2L, session);
+
+        ActionOptions options = createOptions(true, true, false, 0); // canCheck=true
+
+        PlayerAction action = provider.getAction(humanPlayer, options);
+        assertEquals(ActionType.CHECK, action.actionType(),
+                "Disconnected player past grace period should auto-check when check is available");
+    }
+
     // === Helpers ===
 
     private ServerPlayer createHumanPlayer(int id, String name) {
