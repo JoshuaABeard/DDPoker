@@ -24,7 +24,9 @@ import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
 import com.donohoedigital.games.poker.protocol.dto.CreateGameResponse;
 import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSettingsRequest;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
+import com.donohoedigital.games.poker.protocol.dto.KickRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -172,7 +174,9 @@ public class RestGameClient {
      */
     public GameJoinResponse joinGame(String gameId, String password) {
         try {
-            String body = password != null ? "{\"password\":\"" + password + "\"}" : "{}";
+            String body = password != null
+                    ? OBJECT_MAPPER.writeValueAsString(java.util.Map.of("password", password))
+                    : "{}";
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(baseUrl + "/api/v1/games/" + gameId + "/join"))
                     .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
@@ -299,6 +303,68 @@ public class RestGameClient {
             }
         } catch (Exception e) {
             logger.warn("Failed to send heartbeat for game {}", gameId, e);
+        }
+    }
+
+    /**
+     * Update game settings (name, max players, profile, password).
+     *
+     * @param gameId
+     *            the game to update
+     * @param settings
+     *            the new settings
+     * @return the updated game summary
+     * @throws RestGameClientException
+     *             if the update fails
+     */
+    public GameSummary updateSettings(String gameId, GameSettingsRequest settings) {
+        try {
+            String body = OBJECT_MAPPER.writeValueAsString(settings);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/games/" + gameId + "/settings"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
+                    .PUT(HttpRequest.BodyPublishers.ofString(body)).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestGameClientException(
+                        "updateSettings returned " + response.statusCode() + ": " + response.body());
+            }
+            return OBJECT_MAPPER.readValue(response.body(), GameSummary.class);
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to update settings for game " + gameId, e);
+        }
+    }
+
+    /**
+     * Kick a player from a game.
+     *
+     * @param gameId
+     *            the game to kick the player from
+     * @param profileId
+     *            the profile ID of the player to kick
+     * @throws RestGameClientException
+     *             if the kick fails
+     */
+    public void kickPlayer(String gameId, long profileId) {
+        try {
+            String body = OBJECT_MAPPER.writeValueAsString(new KickRequest(profileId));
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/api/v1/games/" + gameId + "/kick"))
+                    .header("Content-Type", "application/json").header("Authorization", "Bearer " + jwt)
+                    .POST(HttpRequest.BodyPublishers.ofString(body)).build();
+
+            HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RestGameClientException(
+                        "kickPlayer returned " + response.statusCode() + ": " + response.body());
+            }
+        } catch (RestGameClientException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RestGameClientException("Failed to kick player " + profileId + " from game " + gameId, e);
         }
     }
 

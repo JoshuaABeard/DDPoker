@@ -72,6 +72,28 @@ class RestGameClientTest {
     }
 
     @Test
+    void joinGame_passwordWithSpecialCharacters_encodedCorrectly() {
+        AtomicReference<String> capturedBody = new AtomicReference<>();
+
+        testServer.createContext("/api/v1/games/g1/join", exchange -> {
+            capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
+            String json = "{\"wsUrl\":\"ws://localhost/ws/games/g1\",\"gameId\":\"g1\"}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        RestGameClient client = new RestGameClient("http://localhost:" + port, "jwt-123");
+        client.joinGame("g1", "pass\"word\\with\\special");
+
+        // The JSON body must be valid — password must be properly escaped
+        assertThat(capturedBody.get()).contains("pass\\\"word\\\\with\\\\special");
+    }
+
+    @Test
     void listGames_acceptsHostPortBaseUrlWithoutScheme() {
         AtomicReference<String> path = new AtomicReference<>();
         AtomicReference<String> auth = new AtomicReference<>();
