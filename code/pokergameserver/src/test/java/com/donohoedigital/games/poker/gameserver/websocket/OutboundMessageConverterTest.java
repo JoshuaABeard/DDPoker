@@ -184,6 +184,66 @@ class OutboundMessageConverterTest {
     }
 
     @Test
+    void createPlayerDisconnectedMessage_hasCorrectStructure() {
+        ServerMessage message = converter.createPlayerDisconnectedMessage("game-1", 99L, "TestPlayer");
+
+        assertEquals(ServerMessageType.PLAYER_DISCONNECTED, message.type());
+        ServerMessageData.PlayerDisconnectedData data = (ServerMessageData.PlayerDisconnectedData) message.data();
+        assertEquals(99L, data.playerId());
+        assertEquals("TestPlayer", data.playerName());
+    }
+
+    @Test
+    void createPlayerKickedMessage_hasCorrectStructure() {
+        ServerMessage message = converter.createPlayerKickedMessage("game-1", 50L, "KickedUser", "AFK");
+
+        assertEquals(ServerMessageType.PLAYER_KICKED, message.type());
+        ServerMessageData.PlayerKickedData data = (ServerMessageData.PlayerKickedData) message.data();
+        assertEquals(50L, data.playerId());
+        assertEquals("KickedUser", data.playerName());
+        assertEquals("AFK", data.reason());
+    }
+
+    @Test
+    void createGamePausedMessage_hasCorrectStructure() {
+        ServerMessage message = converter.createGamePausedMessage("game-1", "Dinner break", "admin");
+
+        assertEquals(ServerMessageType.GAME_PAUSED, message.type());
+        ServerMessageData.GamePausedData data = (ServerMessageData.GamePausedData) message.data();
+        assertEquals("Dinner break", data.reason());
+        assertEquals("admin", data.pausedBy());
+    }
+
+    @Test
+    void createGameResumedMessage_hasCorrectStructure() {
+        ServerMessage message = converter.createGameResumedMessage("game-1", "admin");
+
+        assertEquals(ServerMessageType.GAME_RESUMED, message.type());
+        ServerMessageData.GameResumedData data = (ServerMessageData.GameResumedData) message.data();
+        assertEquals("admin", data.resumedBy());
+    }
+
+    @Test
+    void createChatMessage_hasCorrectStructure() {
+        ServerMessage message = converter.createChatMessage("game-1", 42L, "Alice", "Hello!", true);
+
+        assertEquals(ServerMessageType.CHAT_MESSAGE, message.type());
+        ServerMessageData.ChatMessageData data = (ServerMessageData.ChatMessageData) message.data();
+        assertEquals(42L, data.playerId());
+        assertEquals("Alice", data.playerName());
+        assertEquals("Hello!", data.message());
+        assertTrue(data.tableChat());
+    }
+
+    @Test
+    void createChatMessage_lobbyChat() {
+        ServerMessage message = converter.createChatMessage("game-1", 42L, "Alice", "Hey all", false);
+
+        ServerMessageData.ChatMessageData data = (ServerMessageData.ChatMessageData) message.data();
+        assertFalse(data.tableChat());
+    }
+
+    @Test
     void createGameStateMessage_convertsSnapshotCorrectly() {
         Card[] holeCards = {Card.HEARTS_A, Card.DIAMONDS_K};
         Card[] communityCards = {Card.SPADES_J, Card.CLUBS_T};
