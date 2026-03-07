@@ -558,7 +558,21 @@ public class GameInstance {
     private void onActionRequest(ActionRequest request) {
         ServerPlayerSession session = playerSessions.get((long) request.player().getID());
         if (session != null && session.getMessageSender() != null) {
-            session.getMessageSender().accept(request);
+            try {
+                session.getMessageSender().accept(request);
+            } catch (Exception e) {
+                // WebSocket session may have been closed between the null-check and the
+                // send. Treat as disconnected: submit a default action to prevent the
+                // director thread from blocking or crashing.
+                logger.warn(
+                        "[GameInstance] onActionRequest: send failed for player={} ({}). "
+                                + "Submitting default action to prevent deadlock.",
+                        request.player().getID(), e.getMessage());
+                if (actionProvider != null) {
+                    actionProvider.submitAction(request.player().getID(),
+                            request.options().canCheck() ? PlayerAction.check() : PlayerAction.fold());
+                }
+            }
         } else {
             logger.warn(
                     "[GameInstance] onActionRequest: no messageSender for player={} (session={}). "

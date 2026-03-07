@@ -2418,6 +2418,10 @@ public class WebSocketTournamentDirector extends BasePhase
                     bbSeat = sd.seatIndex();
             }
 
+        // Update hand number from snapshot so the client tracks hand progression
+        // even when HAND_STARTED messages are missed (e.g., on reconnect).
+        table.setHandNum(td.handNumber());
+
         // Only update the dealer button if the snapshot explicitly identifies one.
         // If no seat has isDealer=true (e.g., between hands after a player is
         // eliminated), preserve the current button so it doesn't jump to NO_SEAT

@@ -1,6 +1,6 @@
 /*
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
- * DD Poker - Source Code
+ * DD Poker - Community Edition
  * Copyright (c) 2026 DD Poker Community
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,29 +17,10 @@
  * in the root directory of this project.
  * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
  */
-package com.donohoedigital.games.poker.control;
-
-import com.sun.net.httpserver.HttpExchange;
-
-import java.util.*;
+package com.donohoedigital.games.poker.protocol.dto;
 
 /**
- * {@code GET /history} — tournament history and hand history.
- *
- * <p>
- * Stubbed out: the underlying PokerDatabase API was removed during the
- * client-server separation. This handler returns 501 until reimplemented
- * against the new client-side history APIs.
+ * Request DTO for updating a user profile (PUT /api/v1/profiles/{id}).
  */
-class HistoryHandler extends BaseHandler {
-
-    HistoryHandler(String apiKey) {
-        super(apiKey);
-    }
-
-    @Override
-    protected void handleAuthenticated(HttpExchange exchange) throws Exception {
-        sendJson(exchange, 501,
-                Map.of("error", "NotImplemented", "message", "History endpoint pending client-server separation"));
-    }
+public record UpdateProfileRequest(String email) {
 }

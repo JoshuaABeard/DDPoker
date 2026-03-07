@@ -102,7 +102,8 @@ abstract class ControlServerTestBase {
         ProcessBuilder pb = new ProcessBuilder("java", "-Dgame.server.ai-action-delay-ms=0", "-jar",
                 jar.toAbsolutePath().toString());
         pb.redirectErrorStream(true);
-        pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+        Path logFile = java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "ddpoker-e2e.log");
+        pb.redirectOutput(logFile.toFile());
         pokerProcess = pb.start();
 
         // Poll for port and key files
@@ -155,7 +156,7 @@ abstract class ControlServerTestBase {
      * @return the path if found, or {@code null} if not present
      */
     private static Path findJar() {
-        Path[] candidates = {Path.of("code/poker/target/DDPokerCE-3.3.0.jar"),
+        Path[] candidates = {Path.of("target/DDPokerCE-3.3.0.jar"), Path.of("code/poker/target/DDPokerCE-3.3.0.jar"),
                 Path.of("poker/target/DDPokerCE-3.3.0.jar"),};
         for (Path p : candidates) {
             if (Files.exists(p)) {
@@ -174,7 +175,7 @@ abstract class ControlServerTestBase {
      * port and key files on startup.
      */
     private static Path ddPokerDir() {
-        return Path.of(System.getProperty("user.home"), ".ddpoker");
+        return Path.of(com.donohoedigital.config.FilePrefs.getConfigDirectory());
     }
 
     // -------------------------------------------------------------------------

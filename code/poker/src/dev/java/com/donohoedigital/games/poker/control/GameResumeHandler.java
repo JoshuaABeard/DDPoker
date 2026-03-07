@@ -25,7 +25,7 @@ import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.TournamentOptions;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.server.GameSaveManager;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
@@ -156,7 +156,7 @@ class GameResumeHandler extends BaseHandler {
                 GameEngine engine = GameEngine.getGameEngine();
 
                 // Create a minimal profile so the game object initialises
-                TournamentProfile minProfile = new TournamentProfile("Resume");
+                ClientTournamentProfile minProfile = new ClientTournamentProfile("Resume");
                 minProfile.setNumPlayers(2);
                 minProfile.setBuyinChips(1500);
                 minProfile.setLevel(1, 0, 25, 50, 15);

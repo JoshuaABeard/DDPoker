@@ -37,7 +37,6 @@ class OnlineCrossPlayE2ETest extends ControlServerTestBase {
 
     @BeforeAll
     static void startGameServer() throws Exception {
-        GameServerTestProcess.skipIfJarMissing();
         gameServer = GameServerTestProcess.start(GAME_SERVER_PORT);
         gameServer.registerAndVerify(TEST_USER, TEST_PASS, TEST_EMAIL);
     }
@@ -71,8 +70,17 @@ class OnlineCrossPlayE2ETest extends ControlServerTestBase {
     @Test
     @Order(3)
     void step3_lobbyState() throws Exception {
-        var resp = client().onlineLobby();
-
+        // processPhase("Lobby.Host") is async (invokeLater) — poll until the phase
+        // arrives
+        long deadline = System.currentTimeMillis() + 15_000;
+        com.fasterxml.jackson.databind.JsonNode resp = null;
+        while (System.currentTimeMillis() < deadline) {
+            resp = client().onlineLobby();
+            if ("Lobby.Host".equals(resp.path("phase").asText("")))
+                break;
+            Thread.sleep(500);
+        }
+        assertThat(resp).isNotNull();
         assertThat(resp.path("gameId").asText()).isEqualTo(gameId);
         assertThat(resp.path("phase").asText()).isEqualTo("Lobby.Host");
     }
@@ -110,26 +118,34 @@ class OnlineCrossPlayE2ETest extends ControlServerTestBase {
 
         // Remember starting hand number
         var initialState = client().getState();
-        int startHandNumber = initialState.path("handNumber").asInt(0);
+        int startHandNumber = initialState.path("tournament").path("handNumber").asInt(0);
 
         while (System.currentTimeMillis() < deadline) {
             var state = client().getState();
             String mode = state.path("inputMode").asText("NONE");
-            int currentHand = state.path("handNumber").asInt(0);
+            int currentHand = state.path("tournament").path("handNumber").asInt(0);
 
-            // Hand complete when hand number increments
+            // Hand complete when hand number increments or game is over
             if (currentHand > startHandNumber)
                 return;
+            if (state.path("tournament").path("isGameOver").asBoolean(false))
+                return;
 
-            switch (mode) {
-                case "DEAL" -> client().submitAction("DEAL");
-                case "CONTINUE" -> client().submitAction("CONTINUE");
-                case "CONTINUE_LOWER" -> client().submitAction("CONTINUE_LOWER");
-                case "CHECK_BET" -> client().submitAction("CHECK");
-                case "CHECK_RAISE" -> client().submitAction("CHECK");
-                case "CALL_RAISE" -> client().submitAction("CALL");
-                case "QUITSAVE", "NONE" -> Thread.sleep(200);
-                default -> Thread.sleep(200);
+            try {
+                switch (mode) {
+                    case "DEAL" -> client().submitAction("DEAL");
+                    case "CONTINUE" -> client().submitAction("CONTINUE");
+                    case "CONTINUE_LOWER" -> client().submitAction("CONTINUE_LOWER");
+                    case "CHECK_BET" -> client().submitAction("CHECK");
+                    case "CHECK_RAISE" -> client().submitAction("CHECK");
+                    case "CALL_RAISE" -> client().submitAction("CALL");
+                    case "QUITSAVE", "NONE" -> Thread.sleep(200);
+                    default -> Thread.sleep(200);
+                }
+            } catch (AssertionError e) {
+                // Race condition: input mode changed between getState() and submitAction().
+                // Retry on next loop iteration.
+                Thread.sleep(100);
             }
         }
         throw new AssertionError("Hand did not complete within " + timeout);
@@ -138,10 +154,13 @@ class OnlineCrossPlayE2ETest extends ControlServerTestBase {
     /** Sums player chip stacks + pot from game state JSON. */
     private int totalChips(com.fasterxml.jackson.databind.JsonNode state) {
         int total = 0;
-        for (var player : state.path("players")) {
-            total += player.path("chips").asInt(0);
+        // Players are nested inside tables[n].players
+        for (var table : state.path("tables")) {
+            for (var player : table.path("players")) {
+                total += player.path("chips").asInt(0);
+            }
+            total += table.path("pot").asInt(0);
         }
-        total += state.path("pot").asInt(0);
         return total;
     }
 }

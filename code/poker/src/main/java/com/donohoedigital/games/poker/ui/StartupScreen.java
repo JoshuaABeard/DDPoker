@@ -256,8 +256,8 @@ public class StartupScreen extends JDialog {
                 }
 
                 jwt = finalResp.token();
-                profileId = finalResp.profileId();
-                email = finalResp.email();
+                profileId = finalResp.profile() != null ? finalResp.profile().id() : null;
+                email = finalResp.profile() != null ? finalResp.profile().email() : null;
                 if (rememberMe) {
                     RestAuthClient.getInstance().persistJwt(profileName, jwt);
                 }

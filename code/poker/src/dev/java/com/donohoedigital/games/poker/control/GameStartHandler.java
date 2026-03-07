@@ -30,7 +30,7 @@ import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.TournamentOptions;
 import com.donohoedigital.games.poker.ai.PlayerType;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -61,6 +61,7 @@ import java.util.Map;
  */
 class GameStartHandler extends BaseHandler {
 
+    private static final org.apache.logging.log4j.Logger STATIC_LOGGER = org.apache.logging.log4j.LogManager.getLogger(GameStartHandler.class);
     private static final int DEFAULT_NUM_PLAYERS = 6;
     private static final int DEFAULT_BUYIN_CHIPS = 1500;
 
@@ -89,7 +90,7 @@ class GameStartHandler extends BaseHandler {
             return;
         }
 
-        TournamentProfile profile = buildProfile(json);
+        ClientTournamentProfile profile = buildProfile(json);
         boolean disableAutoDeal = getBool(json, "disableAutoDeal", false);
 
         SwingUtilities.invokeLater(() -> {
@@ -125,7 +126,7 @@ class GameStartHandler extends BaseHandler {
     }
 
     /** Auto-create a "Test Player" profile if no profile exists, so game start never fails on first launch. */
-    private void ensureDefaultProfile() {
+    static void ensureDefaultProfile() {
         try {
             if (PlayerProfileOptions.getDefaultProfile() != null) return;
             List<BaseProfile> existing = PlayerProfile.getProfileList();
@@ -135,14 +136,14 @@ class GameStartHandler extends BaseHandler {
             profile.initFile();
             profile.save();
             ProfileList.setStoredProfile(profile, PlayerProfileOptions.PROFILE_NAME);
-            logger.info("Auto-created default player profile 'Test Player' for dev testing");
+            STATIC_LOGGER.info("Auto-created default player profile 'Test Player' for dev testing");
         } catch (Exception e) {
-            logger.warn("Could not auto-create default profile", e);
+            STATIC_LOGGER.warn("Could not auto-create default profile", e);
         }
     }
 
-    private TournamentProfile buildProfile(JsonNode json) {
-        TournamentProfile profile = new TournamentProfile("API Practice");
+    private ClientTournamentProfile buildProfile(JsonNode json) {
+        ClientTournamentProfile profile = new ClientTournamentProfile("API Practice");
 
         int numPlayers = getInt(json, "numPlayers", DEFAULT_NUM_PLAYERS);
         int buyinChips = getInt(json, "buyinChips", DEFAULT_BUYIN_CHIPS);
@@ -201,9 +202,9 @@ class GameStartHandler extends BaseHandler {
         // to bail before ever sending REBUY_OFFERED to the client.
         if (profile.isRebuys()) {
             profile.setLastRebuyLevel(lastLevel);
-            profile.getMap().setInteger(TournamentProfile.PARAM_REBUYCOST, buyinChips);
-            profile.getMap().setInteger(TournamentProfile.PARAM_REBUYCHIPS, buyinChips);
-            profile.getMap().setInteger(TournamentProfile.PARAM_MAXREBUYS, TournamentProfile.MAX_REBUYS);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_REBUYCOST, buyinChips);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_REBUYCHIPS, buyinChips);
+            profile.getMap().setInteger(ClientTournamentProfile.PARAM_MAXREBUYS, ClientTournamentProfile.MAX_REBUYS);
         }
 
         return profile;

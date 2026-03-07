@@ -35,7 +35,7 @@ import com.donohoedigital.games.poker.dashboard.DashboardPanel;
 import com.donohoedigital.games.poker.display.ClientCard;
 import com.donohoedigital.games.poker.display.ClientHand;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
 
 import javax.swing.SwingUtilities;
@@ -168,7 +168,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
         }
         ClientHoldemHand hand = table != null ? table.getHoldemHand() : null;
         ClientPlayer human = game.getHumanPlayer();
-        TournamentProfile profile = game.getProfile();
+        ClientTournamentProfile profile = game.getProfile();
         int inputMode = game.getInputMode();
         boolean humanTurn = isHumanTurn(inputMode);
         int handNumber = table != null ? table.getHandNum() : 0;
@@ -281,7 +281,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
     private static Map<String, Object> clockData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
         PokerGame game = state.game();
-        TournamentProfile profile = state.profile();
+        ClientTournamentProfile profile = state.profile();
 
         int level = game != null ? Math.max(1, game.getLevel()) : 0;
         data.put("level", level);
@@ -503,7 +503,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
 
     private static Map<String, Object> upNextData(SnapshotState state) {
         Map<String, Object> data = new LinkedHashMap<>();
-        TournamentProfile profile = state.profile();
+        ClientTournamentProfile profile = state.profile();
         int level = state.game() != null ? Math.max(1, state.game().getLevel()) : 0;
         int nextLevel = level + 1;
         boolean hasNextLevel = profile != null && nextLevel <= profile.getLastLevel();
@@ -627,7 +627,7 @@ class UiDashboardWidgetsHandler extends BaseHandler {
             ClientPokerTable table,
             ClientHoldemHand hand,
             ClientPlayer human,
-            TournamentProfile profile,
+            ClientTournamentProfile profile,
             boolean humanTurn,
             int handNumber,
             String round,

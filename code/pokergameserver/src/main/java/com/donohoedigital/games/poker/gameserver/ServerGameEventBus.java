@@ -117,4 +117,5 @@ public class ServerGameEventBus extends GameEventBus {
     public IGameEventStore getEventStore() {
         return eventStore;
     }
+
 }

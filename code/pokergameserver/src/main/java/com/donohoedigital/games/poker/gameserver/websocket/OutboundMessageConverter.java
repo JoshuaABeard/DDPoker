@@ -45,10 +45,20 @@ public class OutboundMessageConverter {
      *            Card to convert (may be null)
      * @return Card display string (e.g., "Ah", "Kd"), or null if card is null
      */
+    // Direct rank/suit mappings — avoids PropertyConfig dependency which is only
+    // initialized on the desktop client, not the game server.
+    private static final String[] RANK_CHARS = {"?", "A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K",
+            "A"};
+    private static final String[] SUIT_CHARS = {"c", "d", "h", "s"};
+
     public static String cardToString(Card card) {
         if (card == null)
             return null;
-        return card.getRankDisplaySingle() + card.getCardSuit().getAbbr();
+        int rank = card.getRank();
+        String rankStr = (rank >= 1 && rank < RANK_CHARS.length) ? RANK_CHARS[rank] : "?";
+        int suit = card.getCardSuit().getRank();
+        String suitStr = (suit >= 0 && suit < SUIT_CHARS.length) ? SUIT_CHARS[suit] : "?";
+        return rankStr + suitStr;
     }
 
     /**

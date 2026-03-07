@@ -50,15 +50,28 @@ class OnlineStartHandler extends BaseHandler {
         String gameId = game.getWebSocketConfig().gameId();
         RestGameClient restClient = new RestGameClient(auth.getCachedServerUrl(), auth.getCachedJwt());
 
+        // Navigate to InitializeOnlineGame FIRST — this triggers the phase chain
+        // that eventually connects the WebSocket via WebSocketTournamentDirector.
+        // We must wait for the WebSocket to connect before starting the server-side
+        // game director, otherwise ACTION_REQUIRED messages fire before the client
+        // is connected and the director auto-folds the human player.
+        SwingUtilities.invokeAndWait(() ->
+                PokerMain.getPokerMain().getDefaultContext().processPhase("InitializeOnlineGame"));
+
+        // Poll until the WebSocketTournamentDirector has set its PlayerActionListener,
+        // which indicates the WebSocket is connected and ready to receive game events.
+        long deadline = System.currentTimeMillis() + 15_000;
+        while (System.currentTimeMillis() < deadline) {
+            if (game.getPlayerActionListener() != null) break;
+            Thread.sleep(100);
+        }
+
         try {
             restClient.startGame(gameId);
         } catch (RestGameClient.RestGameClientException ex) {
             sendJson(exchange, 502, Map.of("error", "StartGameFailed", "message", ex.getMessage()));
             return;
         }
-
-        SwingUtilities.invokeAndWait(() ->
-                PokerMain.getPokerMain().getDefaultContext().processPhase("InitializeOnlineGame"));
 
         sendJson(exchange, 200, Map.of("started", true));
     }

@@ -465,11 +465,11 @@ public class FirstRunWizard extends JDialog {
                 onlineServerUrl = serverUrl;
                 onlineUsername = username;
                 onlineJwt = finalResp.token();
-                onlineProfileId = finalResp.profileId();
+                onlineProfileId = finalResp.profile() != null ? finalResp.profile().id() : null;
                 onlineEmail = email;
                 result = WizardResult.ONLINE_PROFILE_CREATED;
 
-                if (!finalResp.emailVerified()) {
+                if (finalResp.profile() == null || !finalResp.profile().emailVerified()) {
                     JOptionPane.showMessageDialog(FirstRunWizard.this,
                             "A verification email has been sent to " + email
                                     + ".\nVerify your email to access online features.",
@@ -525,8 +525,8 @@ public class FirstRunWizard extends JDialog {
                 onlineServerUrl = serverUrl;
                 onlineUsername = username;
                 onlineJwt = finalResp.token();
-                onlineProfileId = finalResp.profileId();
-                onlineEmail = finalResp.email();
+                onlineProfileId = finalResp.profile() != null ? finalResp.profile().id() : null;
+                onlineEmail = finalResp.profile() != null ? finalResp.profile().email() : null;
                 result = WizardResult.ONLINE_PROFILE_CREATED;
                 dispose();
             });

@@ -4,8 +4,14 @@
  */
 package com.donohoedigital.games.poker.control;
 
+import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.engine.GameEngine;
+import com.donohoedigital.games.poker.PlayerProfile;
+import com.donohoedigital.games.poker.PlayerProfileOptions;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
+import com.donohoedigital.games.poker.ai.PlayerType;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.games.poker.online.RestGameClient;
@@ -69,10 +75,27 @@ class OnlineJoinHandler extends BaseHandler {
         String jwt = auth.getCachedJwt();
 
         SwingUtilities.invokeAndWait(() -> {
-            PokerGame game = (PokerGame) PokerMain.getPokerMain().getDefaultContext().getGame();
-            if (game == null) return;
+            PokerMain main = PokerMain.getPokerMain();
+            if (main == null) return;
+            GameContext context = main.getDefaultContext();
+            if (context == null) return;
+
+            PokerGame game = (PokerGame) context.getGame();
+            if (game == null) {
+                game = (PokerGame) context.createNewGame();
+                context.setGame(game);
+
+                GameStartHandler.ensureDefaultProfile();
+                PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
+                if (profile != null) {
+                    GameEngine engine = GameEngine.getGameEngine();
+                    ClientPlayer player = new ClientPlayer(engine.getPlayerId(), game.getNextPlayerID(), profile, true);
+                    player.setPlayerType(PlayerType.getAdvisor());
+                    game.addPlayer(player);
+                }
+            }
             game.setWebSocketConfig(resp.gameId(), jwt, host, port);
-            PokerMain.getPokerMain().getDefaultContext().processPhase("Lobby.Player");
+            context.processPhase("Lobby.Player");
         });
 
         sendJson(exchange, 200, Map.of("gameId", resp.gameId(), "wsUrl", resp.wsUrl()));

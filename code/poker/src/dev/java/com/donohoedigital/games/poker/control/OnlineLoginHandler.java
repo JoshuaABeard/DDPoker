@@ -78,7 +78,7 @@ class OnlineLoginHandler extends BaseHandler {
             // rather than handling both HTTP status codes and JSON simultaneously.
             sendJson(exchange, 200, Map.of(
                     "success", true,
-                    "emailVerified", resp.emailVerified()));
+                    "emailVerified", resp.profile() != null && resp.profile().emailVerified()));
 
             // Best-effort: write server URL to prefs so the native UI sees it.
             // Failure here is non-fatal since the JWT is already cached.

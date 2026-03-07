@@ -322,24 +322,32 @@ public class GameWebSocketHandler extends TextWebSocketHandler {
             ServerMessage joinedMsg = ServerMessage.of(ServerMessageType.LOBBY_PLAYER_JOINED, gameId,
                     new ServerMessageData.LobbyPlayerJoinedData(playerData));
             connectionManager.broadcastToGame(gameId, joinedMsg, profileId);
+
+            // Pre-create the event bus and wire the broadcaster early so that when the
+            // game starts (either via auto-start below or via REST POST /games/{id}/start)
+            // the broadcaster is already in place to receive HandStarted and other events.
+            // Without this, a REST-initiated start fires events before the broadcaster
+            // is wired, and the client never receives GAME_STATE before ACTION_REQUIRED.
+            ServerGameEventBus earlyEventBus = game.prepareStart();
+            gameBroadcasters.computeIfAbsent(gameId, id -> {
+                GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
+                if (game.getConfig() != null && game.getConfig().practiceConfig() != null
+                        && Boolean.TRUE.equals(game.getConfig().practiceConfig().aiFaceUp())) {
+                    broadcaster.setAiFaceUp(true);
+                }
+                earlyEventBus.setBroadcastCallback(broadcaster);
+                return broadcaster;
+            });
+
             // Practice game auto-start: all players were pre-added by the REST endpoint;
-            // start the game when the owner's WebSocket connects.
-            if (alreadyInGame && profileId == game.getOwnerProfileId()) {
-                // Pre-create the eventBus and wire the broadcaster BEFORE starting the
-                // director. The director runs on a thread pool and fires HandStarted
-                // almost immediately; wiring after startGame() risks missing it.
-                // game.prepareStart() creates eventBus without starting the director;
-                // game.start() (inside startGame) reuses it.
-                ServerGameEventBus earlyEventBus = game.prepareStart();
-                gameBroadcasters.computeIfAbsent(gameId, id -> {
-                    GameEventBroadcaster broadcaster = new GameEventBroadcaster(id, connectionManager, converter, game);
-                    if (game.getConfig() != null && game.getConfig().practiceConfig() != null
-                            && Boolean.TRUE.equals(game.getConfig().practiceConfig().aiFaceUp())) {
-                        broadcaster.setAiFaceUp(true);
-                    }
-                    earlyEventBus.setBroadcastCallback(broadcaster);
-                    return broadcaster;
-                });
+            // start the game when the owner's WebSocket connects. Online games use
+            // explicit POST /games/{id}/start after lobby. Only auto-start when all
+            // expected player seats are already filled (practice games pre-fill all seats).
+            int expectedPlayers = game.getConfig() != null && game.getConfig().maxPlayers() > 0
+                    ? game.getConfig().maxPlayers()
+                    : 0;
+            boolean allSeatsReady = expectedPlayers > 0 && game.getPlayerSessions().size() >= expectedPlayers;
+            if (allSeatsReady && alreadyInGame && profileId == game.getOwnerProfileId()) {
                 gameInstanceManager.startGame(gameId, profileId);
                 // No extra GAME_STATE here: the broadcaster's HandStarted handler sends
                 // GAME_STATE before HAND_STARTED at the start of the first hand, which

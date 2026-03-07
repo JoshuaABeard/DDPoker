@@ -36,7 +36,7 @@ import com.donohoedigital.games.poker.core.ActionOptions;
 import com.donohoedigital.games.poker.gameserver.ActionRequest;
 import com.donohoedigital.games.poker.gameserver.ServerPlayerActionProvider;
 import com.donohoedigital.games.poker.gameserver.ServerTournamentDirector;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.online.GameEventLog;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -152,7 +152,7 @@ class StateHandler extends BaseHandler {
         // so getSmallBlind(0) returns 0. Use effectiveLevel = max(1, level) for lookups.
         // Also expose effectiveLevel as the "level" field so 0 is never returned (0 is
         // falsy in JavaScript and confuses test assertions using ||"" fallbacks).
-        TournamentProfile profile0 = game.getProfile();
+        ClientTournamentProfile profile0 = game.getProfile();
         int effectiveLevel = Math.max(1, game.getLevel());
         t.put("level", effectiveLevel);
         t.put("smallBlind", profile0 != null ? profile0.getSmallBlind(effectiveLevel) : 0);
@@ -172,7 +172,7 @@ class StateHandler extends BaseHandler {
         }
         t.put("handNumber", currentTable != null ? currentTable.getHandNum() : 0);
 
-        TournamentProfile profile = profile0;
+        ClientTournamentProfile profile = profile0;
         if (profile != null) {
             t.put("tournamentName", profile.getName());
             t.put("levelCount", profile.getLastLevel());
@@ -327,7 +327,7 @@ class StateHandler extends BaseHandler {
         return p;
     }
 
-    private List<Map<String, Object>> buildPayoutTable(PokerGame game, TournamentProfile profile) {
+    private List<Map<String, Object>> buildPayoutTable(PokerGame game, ClientTournamentProfile profile) {
         List<Map<String, Object>> payouts = new ArrayList<>();
         int totalPlayers = Math.max(0, game.getNumPlayers());
         for (int place = 1; place <= totalPlayers; place++) {

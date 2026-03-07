@@ -4,11 +4,20 @@
  */
 package com.donohoedigital.games.poker.control;
 
+import com.donohoedigital.games.engine.GameContext;
+import com.donohoedigital.games.engine.GameEngine;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
+import com.donohoedigital.games.poker.PlayerProfile;
+import com.donohoedigital.games.poker.PlayerProfileOptions;
+import com.donohoedigital.games.poker.PokerClientConstants;
 import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
+import com.donohoedigital.games.poker.ai.PlayerType;
+import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.RestAuthClient;
 import com.donohoedigital.games.poker.online.RestGameClient;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig.BlindLevel;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -79,12 +88,61 @@ class OnlineHostHandler extends BaseHandler {
         String jwt  = auth.getCachedJwt();
 
         SwingUtilities.invokeAndWait(() -> {
-            PokerGame game = (PokerGame) PokerMain.getPokerMain().getDefaultContext().getGame();
-            if (game == null) return;
+            PokerMain main = PokerMain.getPokerMain();
+            if (main == null) return;
+            GameContext context = main.getDefaultContext();
+            if (context == null) return;
+
+            PokerGame game = (PokerGame) context.getGame();
+            if (game == null) {
+                // No game exists yet (e.g. API-driven flow that skips TournamentOptions).
+                // Create one so we have somewhere to store the WebSocketConfig.
+                game = (PokerGame) context.createNewGame();
+                context.setGame(game);
+
+                // Ensure a human player exists so the lobby/game phases work correctly.
+                GameStartHandler.ensureDefaultProfile();
+                PlayerProfile profile = PlayerProfileOptions.getDefaultProfile();
+                if (profile != null) {
+                    GameEngine engine = GameEngine.getGameEngine();
+                    ClientPlayer player = new ClientPlayer(engine.getPlayerId(), game.getNextPlayerID(), profile, true);
+                    player.setPlayerType(PlayerType.getAdvisor());
+                    player.setVersion(PokerClientConstants.VERSION);
+                    game.addPlayer(player);
+                }
+            }
+            // Build a ClientTournamentProfile from the GameConfig so the UI phases
+            // (ShowTournamentTable, etc.) have the blind structure and settings they need.
+            if (game.getProfile() == null) {
+                ClientTournamentProfile tp = buildProfileFromConfig(config);
+                game.initTournament(tp);
+            }
+
             game.setWebSocketConfig(gameId, jwt, host, port);
-            PokerMain.getPokerMain().getDefaultContext().processPhase("Lobby.Host");
+            context.processPhase("Lobby.Host");
         });
 
         sendJson(exchange, 200, Map.of("gameId", gameId, "wsUrl", wsUrl));
+    }
+
+    private ClientTournamentProfile buildProfileFromConfig(GameConfig config) {
+        ClientTournamentProfile tp = new ClientTournamentProfile("Online Game");
+        tp.setNumPlayers(config.maxPlayers() > 0 ? config.maxPlayers() : 6);
+        tp.setBuyinChips(config.startingChips() > 0 ? config.startingChips() : 1500);
+
+        java.util.List<BlindLevel> blinds = config.blindStructure();
+        if (blinds != null) {
+            for (int i = 0; i < blinds.size(); i++) {
+                BlindLevel bl = blinds.get(i);
+                tp.setLevel(i + 1, bl.ante(), bl.smallBlind(), bl.bigBlind(), bl.minutes());
+            }
+        } else {
+            tp.setLevel(1, 0, 25, 50, 15);
+            tp.setLevel(2, 0, 50, 100, 15);
+            tp.setLevel(3, 25, 100, 200, 15);
+        }
+
+        tp.fixAll();
+        return tp;
     }
 }

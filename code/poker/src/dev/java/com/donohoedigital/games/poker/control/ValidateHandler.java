@@ -25,7 +25,7 @@ import com.donohoedigital.games.poker.online.ClientHoldemHand;
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.online.ClientPokerTable;
 import com.donohoedigital.games.poker.engine.PokerConstants;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.util.*;
@@ -110,7 +110,7 @@ class ValidateHandler extends BaseHandler {
         int buyinPerPlayer = game.getStartingChips();
         // Profile holds the original configured player count (constant throughout game).
         // game.getNumPlayers() may shrink as players are eliminated and removed.
-        TournamentProfile profile = game.getProfile();
+        ClientTournamentProfile profile = game.getProfile();
         int profilePlayerCount = profile != null ? profile.getNumPlayers() : game.getNumPlayers();
 
         int grandTotalChips = 0;

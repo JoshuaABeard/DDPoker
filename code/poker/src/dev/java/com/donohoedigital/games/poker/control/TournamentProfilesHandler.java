@@ -20,7 +20,7 @@
 package com.donohoedigital.games.poker.control;
 
 import com.donohoedigital.games.config.BaseProfile;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
 
@@ -52,9 +52,9 @@ class TournamentProfilesHandler extends BaseHandler {
     private void handleGet(HttpExchange exchange) throws Exception {
         List<Map<String, Object>> result = new ArrayList<>();
         try {
-            List<BaseProfile> profiles = TournamentProfile.getProfileList();
+            List<BaseProfile> profiles = ClientTournamentProfile.getProfileList();
             for (BaseProfile bp : profiles) {
-                if (bp instanceof TournamentProfile tp) {
+                if (bp instanceof ClientTournamentProfile tp) {
                     result.add(profileToMap(tp));
                 }
             }
@@ -87,14 +87,14 @@ class TournamentProfilesHandler extends BaseHandler {
         String name = json.get("name").asText().trim();
 
         // Check for duplicate name
-        for (BaseProfile bp : TournamentProfile.getProfileList()) {
+        for (BaseProfile bp : ClientTournamentProfile.getProfileList()) {
             if (bp.getName().equalsIgnoreCase(name)) {
                 sendJson(exchange, 409, Map.of("error", "Conflict", "message", "Profile already exists: " + name));
                 return;
             }
         }
 
-        TournamentProfile tp = new TournamentProfile(name);
+        ClientTournamentProfile tp = new ClientTournamentProfile(name);
         applyJsonToProfile(tp, json);
         tp.fixAll();
         tp.initFile();
@@ -124,7 +124,7 @@ class TournamentProfilesHandler extends BaseHandler {
             return;
         }
 
-        for (BaseProfile bp : TournamentProfile.getProfileList()) {
+        for (BaseProfile bp : ClientTournamentProfile.getProfileList()) {
             if (bp.getName().equalsIgnoreCase(name)) {
                 if (!bp.canDelete()) {
                     sendJson(exchange, 403, Map.of("error", "Forbidden", "message", "Built-in profile cannot be deleted"));
@@ -139,7 +139,7 @@ class TournamentProfilesHandler extends BaseHandler {
         sendJson(exchange, 404, Map.of("error", "NotFound", "message", "No profile named: " + name));
     }
 
-    private void applyJsonToProfile(TournamentProfile tp, JsonNode json) {
+    private void applyJsonToProfile(ClientTournamentProfile tp, JsonNode json) {
         if (json.has("numPlayers")) tp.setNumPlayers(json.get("numPlayers").asInt());
         if (json.has("buyinChips")) tp.setBuyinChips(json.get("buyinChips").asInt());
         if (json.has("buyinCost")) tp.setBuyin(json.get("buyinCost").asInt());
@@ -159,7 +159,7 @@ class TournamentProfilesHandler extends BaseHandler {
         }
     }
 
-    private Map<String, Object> profileToMap(TournamentProfile tp) {
+    private Map<String, Object> profileToMap(ClientTournamentProfile tp) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("name", tp.getName());
         m.put("fileName", tp.getFile() != null ? tp.getFile().getName() : null);

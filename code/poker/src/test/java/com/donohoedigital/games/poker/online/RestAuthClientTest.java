@@ -72,7 +72,7 @@ class RestAuthClientTest {
     @Test
     void login_success_returnsLoginResponse() throws IOException {
         testServer.createContext("/api/v1/auth/login", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"tok123\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -85,16 +85,17 @@ class RestAuthClientTest {
 
         assertThat(resp.success()).isTrue();
         assertThat(resp.token()).isEqualTo("tok123");
-        assertThat(resp.profileId()).isEqualTo(42L);
-        assertThat(resp.username()).isEqualTo("Alice");
-        assertThat(resp.email()).isEqualTo("alice@example.com");
-        assertThat(resp.emailVerified()).isFalse();
+        assertThat(resp.profile()).isNotNull();
+        assertThat(resp.profile().id()).isEqualTo(42L);
+        assertThat(resp.profile().username()).isEqualTo("Alice");
+        assertThat(resp.profile().email()).isEqualTo("alice@example.com");
+        assertThat(resp.profile().emailVerified()).isFalse();
     }
 
     @Test
     void login_parsesEmailVerified_andSetsCache() throws IOException {
         testServer.createContext("/api/v1/auth/login", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":true,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":true,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"tok123\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -111,7 +112,7 @@ class RestAuthClientTest {
     @Test
     void login_emailVerifiedFalse_setsCache() throws IOException {
         testServer.createContext("/api/v1/auth/login", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok123\",\"profileId\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":42,\"username\":\"Alice\",\"email\":\"alice@example.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"tok123\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -128,7 +129,7 @@ class RestAuthClientTest {
     @Test
     void login_failure_throwsRestAuthException() {
         testServer.createContext("/api/v1/auth/login", exchange -> {
-            String json = "{\"success\":false,\"token\":null,\"profileId\":null,\"username\":null,\"email\":null,\"emailVerified\":false,\"message\":\"Invalid username or password\",\"retryAfterSeconds\":null}";
+            String json = "{\"success\":false,\"profile\":null,\"token\":null,\"message\":\"Invalid username or password\",\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(401, bytes.length);
@@ -147,7 +148,7 @@ class RestAuthClientTest {
         AtomicReference<String> capturedBody = new AtomicReference<>();
         testServer.createContext("/api/v1/auth/login", exchange -> {
             capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"t\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -169,7 +170,7 @@ class RestAuthClientTest {
     @Test
     void register_success_returnsLoginResponse() throws IOException {
         testServer.createContext("/api/v1/auth/register", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok456\",\"profileId\":99,\"username\":\"Bob\",\"email\":\"bob@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":99,\"username\":\"Bob\",\"email\":\"bob@example.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"tok456\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -182,15 +183,16 @@ class RestAuthClientTest {
 
         assertThat(resp.success()).isTrue();
         assertThat(resp.token()).isEqualTo("tok456");
-        assertThat(resp.profileId()).isEqualTo(99L);
-        assertThat(resp.email()).isEqualTo("bob@example.com");
-        assertThat(resp.emailVerified()).isFalse();
+        assertThat(resp.profile()).isNotNull();
+        assertThat(resp.profile().id()).isEqualTo(99L);
+        assertThat(resp.profile().email()).isEqualTo("bob@example.com");
+        assertThat(resp.profile().emailVerified()).isFalse();
     }
 
     @Test
     void register_parsesEmailVerified_andSetsCache() throws IOException {
         testServer.createContext("/api/v1/auth/register", exchange -> {
-            String json = "{\"success\":true,\"token\":\"tok456\",\"profileId\":99,\"username\":\"Bob\",\"email\":\"bob@example.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":99,\"username\":\"Bob\",\"email\":\"bob@example.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"tok456\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -207,7 +209,7 @@ class RestAuthClientTest {
     @Test
     void register_duplicate_throwsRestAuthException() {
         testServer.createContext("/api/v1/auth/register", exchange -> {
-            String json = "{\"success\":false,\"token\":null,\"profileId\":null,\"username\":null,\"email\":null,\"emailVerified\":false,\"message\":\"Username already exists\",\"retryAfterSeconds\":null}";
+            String json = "{\"success\":false,\"profile\":null,\"token\":null,\"message\":\"Username already exists\",\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(400, bytes.length);
@@ -797,7 +799,7 @@ class RestAuthClientTest {
         AtomicReference<String> capturedBody = new AtomicReference<>();
         testServer.createContext("/api/v1/auth/login", exchange -> {
             capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"t\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);
@@ -816,7 +818,7 @@ class RestAuthClientTest {
         AtomicReference<String> capturedBody = new AtomicReference<>();
         testServer.createContext("/api/v1/auth/login", exchange -> {
             capturedBody.set(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
-            String json = "{\"success\":true,\"token\":\"t\",\"profileId\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"message\":null,\"retryAfterSeconds\":null}";
+            String json = "{\"success\":true,\"profile\":{\"id\":1,\"username\":\"u\",\"email\":\"u@e.com\",\"emailVerified\":false,\"admin\":false,\"retired\":false,\"createDate\":null},\"token\":\"t\",\"message\":null,\"retryAfterSeconds\":null}";
             byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(200, bytes.length);

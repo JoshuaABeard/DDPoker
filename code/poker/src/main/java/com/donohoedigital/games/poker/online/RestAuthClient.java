@@ -309,7 +309,7 @@ public class RestAuthClient {
                 throw new RestAuthException(result.message() != null ? result.message() : "Login failed");
             }
             cacheSession(serverUrl, result.token());
-            cachedEmailVerified_ = result.emailVerified();
+            cachedEmailVerified_ = result.profile() != null && result.profile().emailVerified();
             return result;
         } catch (RestAuthException e) {
             throw e;
@@ -346,7 +346,7 @@ public class RestAuthClient {
             if (!result.success()) {
                 throw new RestAuthException(result.message() != null ? result.message() : "Registration failed");
             }
-            cachedEmailVerified_ = result.emailVerified();
+            cachedEmailVerified_ = result.profile() != null && result.profile().emailVerified();
             return result;
         } catch (RestAuthException e) {
             throw e;

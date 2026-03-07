@@ -28,7 +28,7 @@ import com.donohoedigital.games.poker.PokerGame;
 import com.donohoedigital.games.poker.PokerMain;
 import com.donohoedigital.games.poker.online.ClientPlayer;
 import com.donohoedigital.games.poker.PokerTableInput;
-import com.donohoedigital.games.poker.model.TournamentProfile;
+import com.donohoedigital.games.poker.ClientTournamentProfile;
 import com.donohoedigital.games.poker.online.PokerDirector;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.net.httpserver.HttpExchange;
@@ -165,7 +165,7 @@ class ActionHandler extends BaseHandler {
                 PokerDirector director = getDirector();
                 if (game == null || director == null) return;
                 ClientPlayer human = game.getHumanPlayer();
-                TournamentProfile prof = game.getProfile();
+                ClientTournamentProfile prof = game.getProfile();
                 if (human == null || prof == null) return;
                 boolean pending = human.isInHand();
                 director.doRebuy(human, game.getLevel(), prof.getRebuyCost(), prof.getRebuyChips(), pending);
@@ -190,7 +190,7 @@ class ActionHandler extends BaseHandler {
                 PokerDirector director = getDirector();
                 if (game == null || director == null) return;
                 ClientPlayer human = game.getHumanPlayer();
-                TournamentProfile prof = game.getProfile();
+                ClientTournamentProfile prof = game.getProfile();
                 if (human == null || prof == null) return;
                 director.doAddon(human, prof.getAddonCost(), prof.getAddonChips());
             });

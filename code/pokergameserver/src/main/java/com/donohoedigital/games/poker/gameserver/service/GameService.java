@@ -331,6 +331,16 @@ public class GameService {
         if ("SERVER".equals(entity.getHostingType()) && gameInstanceManager != null) {
             GameInstance game = gameInstanceManager.getGame(gameId);
             if (game != null) {
+                // Fill empty seats with AI if config says so
+                GameConfig config = game.getConfig();
+                if (config != null && config.fillComputer()) {
+                    int maxPlayers = config.maxPlayers() > 0 ? config.maxPlayers() : 6;
+                    int currentPlayers = game.getPlayerSessions().size();
+                    for (int i = currentPlayers; i < maxPlayers; i++) {
+                        long aiId = -(i + 1); // negative IDs for AI players
+                        game.addPlayer(aiId, "AI Player " + (i + 1), true, 5);
+                    }
+                }
                 // In-memory game director exists (created via GameInstanceManager) —
                 // start it BEFORE updating DB so a failure leaves DB at WAITING_FOR_PLAYERS.
                 gameInstanceManager.startGame(gameId, requesterProfileId);

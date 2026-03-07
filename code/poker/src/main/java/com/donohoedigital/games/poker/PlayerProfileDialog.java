@@ -354,7 +354,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                     }, () -> {
                         LoginResponse resp = responseRef[0];
                         profile_.setJwt(resp.token());
-                        profile_.setProfileId(resp.profileId());
+                        profile_.setProfileId(resp.profile() != null ? resp.profile().id() : null);
                         profile_.setEmail(email);
                         profile_.setPassword(password);
                     });
@@ -371,7 +371,7 @@ public class PlayerProfileDialog extends DialogPhase implements PropertyChangeLi
                     }, () -> {
                         LoginResponse resp = responseRef[0];
                         profile_.setJwt(resp.token());
-                        profile_.setProfileId(resp.profileId());
+                        profile_.setProfileId(resp.profile() != null ? resp.profile().id() : null);
                         profile_.setPassword(password);
                         profile_.setEmail(userRef[0].email());
                     });

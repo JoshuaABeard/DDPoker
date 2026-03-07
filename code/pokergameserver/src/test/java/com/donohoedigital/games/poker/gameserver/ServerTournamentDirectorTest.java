@@ -27,6 +27,7 @@ import com.donohoedigital.games.poker.engine.event.GameEvent;
 import com.donohoedigital.games.poker.engine.state.ActionType;
 import com.donohoedigital.games.poker.engine.state.BettingRound;
 import com.donohoedigital.games.poker.engine.state.TableState;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -271,6 +272,7 @@ class ServerTournamentDirectorTest {
      * TD.CheckEndHand were both dead code paths for auto-deal games. The correct
      * hook is nextState==BEGIN (handleDone() always returns BEGIN after showdown).
      */
+    @Tag("slow")
     @Test
     void interHandPausePreventsRacing() throws Exception {
         int delayMs = 20;
