@@ -313,6 +313,43 @@ class GameInstanceManagerTest {
     }
 
     // ====================================
+    // Concurrency Tests
+    // ====================================
+
+    @Test
+    void createGame_concurrentCreates_respectsMaxLimit() throws Exception {
+        int maxGames = 5; // matches properties.maxConcurrentGames()
+        int attemptCount = maxGames + 5; // 10 attempts for 5 slots
+        java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch doneLatch = new java.util.concurrent.CountDownLatch(attemptCount);
+        java.util.concurrent.atomic.AtomicInteger successes = new java.util.concurrent.atomic.AtomicInteger();
+        java.util.concurrent.atomic.AtomicInteger failures = new java.util.concurrent.atomic.AtomicInteger();
+
+        for (int i = 0; i < attemptCount; i++) {
+            long profileId = 1000 + i; // Different users to avoid per-user limit
+            new Thread(() -> {
+                try {
+                    startLatch.await();
+                    manager.createGame(profileId, config);
+                    successes.incrementAndGet();
+                } catch (Exception e) {
+                    failures.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            }).start();
+        }
+
+        startLatch.countDown(); // Release all threads at once
+        assertTrue(doneLatch.await(10, java.util.concurrent.TimeUnit.SECONDS), "All threads should complete");
+
+        // At most maxGames should have been created
+        assertTrue(successes.get() <= maxGames,
+                "At most " + maxGames + " games should succeed, but " + successes.get() + " did");
+        assertEquals(attemptCount, successes.get() + failures.get(), "All attempts should have completed");
+    }
+
+    // ====================================
     // Helper Methods
     // ====================================
 
