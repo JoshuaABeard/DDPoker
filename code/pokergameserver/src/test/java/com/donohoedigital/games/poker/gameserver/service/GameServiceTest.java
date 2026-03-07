@@ -310,6 +310,67 @@ class GameServiceTest {
     }
 
     // =========================================================================
+    // Blind parsing edge cases
+    // =========================================================================
+
+    @Test
+    void listGames_emptyProfileData_returnsZeroBlinds() {
+        // Create a game then replace its profileData with empty string
+        String gameId = gameService.createGame(createTestConfig("Empty Config"), 1L, "owner");
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setProfileData("");
+        gameInstanceRepository.save(entity);
+
+        GameListResponse response = gameService.listGames(null, null, null, 0, 50);
+
+        GameSummary game = response.games().stream().filter(g -> gameId.equals(g.gameId())).findFirst().orElseThrow();
+        // Safe default: zero blinds when config is empty
+        assertThat(game.blinds().smallBlind()).isEqualTo(0);
+        assertThat(game.blinds().bigBlind()).isEqualTo(0);
+        assertThat(game.blinds().ante()).isEqualTo(0);
+    }
+
+    @Test
+    void listGames_malformedProfileData_returnsZeroBlinds() {
+        String gameId = gameService.createGame(createTestConfig("Malformed"), 1L, "owner");
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setProfileData("{not valid json!!!");
+        gameInstanceRepository.save(entity);
+
+        GameListResponse response = gameService.listGames(null, null, null, 0, 50);
+
+        GameSummary game = response.games().stream().filter(g -> gameId.equals(g.gameId())).findFirst().orElseThrow();
+        assertThat(game.blinds().smallBlind()).isEqualTo(0);
+    }
+
+    @Test
+    void listGames_emptyBlindStructure_returnsZeroBlinds() {
+        String gameId = gameService.createGame(createTestConfig("Empty Blinds"), 1L, "owner");
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setProfileData("{\"blindStructure\":[]}");
+        gameInstanceRepository.save(entity);
+
+        GameListResponse response = gameService.listGames(null, null, null, 0, 50);
+
+        GameSummary game = response.games().stream().filter(g -> gameId.equals(g.gameId())).findFirst().orElseThrow();
+        assertThat(game.blinds().smallBlind()).isEqualTo(0);
+    }
+
+    @Test
+    void listGames_validBlindStructure_extractsFirstLevel() {
+        // Create game with known blind structure (10/20 from createTestConfig)
+        String gameId = gameService.createGame(createTestConfig("Good Blinds"), 1L, "owner");
+
+        GameListResponse response = gameService.listGames(null, null, null, 0, 50);
+
+        GameSummary game = response.games().stream().filter(g -> gameId.equals(g.gameId())).findFirst().orElseThrow();
+        // First blind level should appear in game discovery list
+        assertThat(game.blinds().smallBlind()).isEqualTo(10);
+        assertThat(game.blinds().bigBlind()).isEqualTo(20);
+        assertThat(game.blinds().ante()).isEqualTo(0);
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
