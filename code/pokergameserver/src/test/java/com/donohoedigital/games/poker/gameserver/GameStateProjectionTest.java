@@ -20,7 +20,11 @@
 package com.donohoedigital.games.poker.gameserver;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
+import com.donohoedigital.games.poker.engine.Card;
+import com.donohoedigital.games.poker.engine.state.BettingRound;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -251,6 +255,305 @@ class GameStateProjectionTest {
         // At showdown no player is acting
         GameStateSnapshot snapshot = GameStateProjection.forShowdown(table, null, 1);
         assertEquals(-1, snapshot.currentActorSeat());
+    }
+
+    // -------------------------------------------------------------------------
+    // Tests with a mocked ServerHand (active hand in progress)
+    // -------------------------------------------------------------------------
+
+    private ServerHand createMockHand(BettingRound round, boolean done) {
+        ServerHand hand = mock(ServerHand.class);
+        when(hand.getRound()).thenReturn(round);
+        when(hand.isDone()).thenReturn(done);
+        when(hand.getSmallBlindSeat()).thenReturn(0);
+        when(hand.getBigBlindSeat()).thenReturn(1);
+        when(hand.getCurrentPlayerWithInit()).thenReturn(null);
+        when(hand.getPots()).thenReturn(List.of());
+        when(hand.getPendingBetTotal()).thenReturn(0);
+        when(hand.getCommunityCards()).thenReturn(null);
+        when(hand.getPlayerCards(any())).thenReturn(null);
+        when(hand.getPlayerBet(anyInt())).thenReturn(0);
+        return hand;
+    }
+
+    @Test
+    void forPlayer_withHand_includesOwnHoleCards() {
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        Card[] aliceCards = {Card.HEARTS_A, Card.SPADES_K};
+        when(hand.getPlayerCards(players.get(0))).thenReturn(aliceCards);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertArrayEquals(aliceCards, snapshot.myHoleCards());
+    }
+
+    @Test
+    void forPlayer_withHand_hidesOtherPlayersHoleCards() {
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        Card[] aliceCards = {Card.HEARTS_A, Card.SPADES_K};
+        Card[] bobCards = {Card.DIAMONDS_Q, Card.CLUBS_J};
+        when(hand.getPlayerCards(players.get(0))).thenReturn(aliceCards);
+        when(hand.getPlayerCards(players.get(1))).thenReturn(bobCards);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        // Alice should see her own cards in player state
+        GameStateSnapshot.PlayerState aliceState = snapshot.players().stream().filter(p -> p.playerId() == 1)
+                .findFirst().orElseThrow();
+        assertNotNull(aliceState.holeCards());
+
+        // Bob's hole cards must NOT be visible to Alice
+        GameStateSnapshot.PlayerState bobState = snapshot.players().stream().filter(p -> p.playerId() == 2).findFirst()
+                .orElseThrow();
+        assertNull(bobState.holeCards(), "SECURITY: Other player's hole cards must be hidden");
+    }
+
+    @Test
+    void forPlayer_withHand_includesCommunityCards() {
+        ServerHand hand = createMockHand(BettingRound.FLOP, false);
+        Card[] community = {Card.HEARTS_2, Card.DIAMONDS_7, Card.SPADES_T};
+        when(hand.getCommunityCards()).thenReturn(community);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertArrayEquals(community, snapshot.communityCards());
+    }
+
+    @Test
+    void forPlayer_withHand_includesBettingRound() {
+        ServerHand hand = createMockHand(BettingRound.FLOP, false);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertEquals("FLOP", snapshot.bettingRound());
+    }
+
+    @Test
+    void forPlayer_doneHand_reportsShowdownRound() {
+        ServerHand hand = createMockHand(BettingRound.RIVER, true);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertEquals("SHOWDOWN", snapshot.bettingRound());
+    }
+
+    @Test
+    void forPlayer_withHand_includesBlindSeats() {
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        when(hand.getSmallBlindSeat()).thenReturn(0);
+        when(hand.getBigBlindSeat()).thenReturn(1);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertEquals(0, snapshot.smallBlindSeat());
+        assertEquals(1, snapshot.bigBlindSeat());
+    }
+
+    @Test
+    void forPlayer_withHand_includesCurrentActor() {
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        when(hand.getCurrentPlayerWithInit()).thenReturn(players.get(2)); // Charlie acts
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertEquals(players.get(2).getSeat(), snapshot.currentActorSeat());
+    }
+
+    @Test
+    void forPlayer_withHand_includesPlayerBets() {
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        when(hand.getPlayerBet(1)).thenReturn(50);
+        when(hand.getPlayerBet(2)).thenReturn(100);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        GameStateSnapshot.PlayerState aliceState = snapshot.players().stream().filter(p -> p.playerId() == 1)
+                .findFirst().orElseThrow();
+        assertEquals(50, aliceState.currentBet());
+        GameStateSnapshot.PlayerState bobState = snapshot.players().stream().filter(p -> p.playerId() == 2).findFirst()
+                .orElseThrow();
+        assertEquals(100, bobState.currentBet());
+    }
+
+    @Test
+    void forPlayer_withHand_includesPots() {
+        ServerHand hand = createMockHand(BettingRound.FLOP, false);
+        ServerPot pot = new ServerPot(0, 0);
+        pot.addChips(players.get(0), 250);
+        pot.addChips(players.get(1), 250);
+        when(hand.getPots()).thenReturn(List.of(pot));
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertEquals(1, snapshot.pots().size());
+        assertEquals(500, snapshot.pots().get(0).amount());
+        assertTrue(snapshot.pots().get(0).eligiblePlayerIds().contains(1));
+        assertTrue(snapshot.pots().get(0).eligiblePlayerIds().contains(2));
+    }
+
+    @Test
+    void forPlayer_withHand_includesPendingBets() {
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        when(hand.getPots()).thenReturn(List.of());
+        when(hand.getPendingBetTotal()).thenReturn(150);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        assertEquals(1, snapshot.pots().size());
+        assertEquals(150, snapshot.pots().get(0).amount());
+        assertTrue(snapshot.pots().get(0).eligiblePlayerIds().isEmpty());
+    }
+
+    @Test
+    void forPlayer_sittingOutPlayer_noHoleCards() {
+        players.get(0).setSittingOut(true); // Alice sitting out
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        Card[] aliceCards = {Card.HEARTS_A, Card.SPADES_K};
+        when(hand.getPlayerCards(players.get(0))).thenReturn(aliceCards);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        // Even though cards exist, sitting out player shouldn't see them in player
+        // state
+        GameStateSnapshot.PlayerState aliceState = snapshot.players().stream().filter(p -> p.playerId() == 1)
+                .findFirst().orElseThrow();
+        assertNull(aliceState.holeCards(), "Sitting-out player should not see hole cards in seat");
+    }
+
+    @Test
+    void forPlayer_sittingOutPlayer_zeroBet() {
+        players.get(0).setSittingOut(true);
+        ServerHand hand = createMockHand(BettingRound.PRE_FLOP, false);
+        when(hand.getPlayerBet(1)).thenReturn(50); // bet exists but player sitting out
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, hand, 1);
+
+        GameStateSnapshot.PlayerState aliceState = snapshot.players().stream().filter(p -> p.playerId() == 1)
+                .findFirst().orElseThrow();
+        assertEquals(0, aliceState.currentBet(), "Sitting-out player should have 0 current bet");
+    }
+
+    @Test
+    void forShowdown_withHand_revealsNonFoldedCards() {
+        ServerHand hand = createMockHand(BettingRound.RIVER, false);
+        Card[] aliceCards = {Card.HEARTS_A, Card.SPADES_K};
+        Card[] bobCards = {Card.DIAMONDS_Q, Card.CLUBS_J};
+        when(hand.getPlayerCards(players.get(0))).thenReturn(aliceCards);
+        when(hand.getPlayerCards(players.get(1))).thenReturn(bobCards);
+        // Charlie folded
+        players.get(2).setFolded(true);
+        when(hand.getPlayerCards(players.get(2))).thenReturn(new Card[]{Card.HEARTS_2, Card.CLUBS_3});
+
+        GameStateSnapshot snapshot = GameStateProjection.forShowdown(table, hand, 1);
+
+        // Alice's cards visible (not folded)
+        GameStateSnapshot.PlayerState aliceState = snapshot.players().stream().filter(p -> p.playerId() == 1)
+                .findFirst().orElseThrow();
+        assertNotNull(aliceState.holeCards());
+
+        // Bob's cards visible (not folded)
+        GameStateSnapshot.PlayerState bobState = snapshot.players().stream().filter(p -> p.playerId() == 2).findFirst()
+                .orElseThrow();
+        assertNotNull(bobState.holeCards());
+
+        // Charlie's cards hidden (folded)
+        GameStateSnapshot.PlayerState charlieState = snapshot.players().stream().filter(p -> p.playerId() == 3)
+                .findFirst().orElseThrow();
+        assertNull(charlieState.holeCards(), "Folded player's cards should be hidden at showdown");
+    }
+
+    @Test
+    void forShowdown_withHand_zeroCurrentBets() {
+        ServerHand hand = createMockHand(BettingRound.RIVER, false);
+
+        GameStateSnapshot snapshot = GameStateProjection.forShowdown(table, hand, 1);
+
+        // At showdown all bets committed to pots, so current bet = 0
+        for (GameStateSnapshot.PlayerState ps : snapshot.players()) {
+            assertEquals(0, ps.currentBet());
+        }
+    }
+
+    @Test
+    void forObserver_withHand_noHoleCards() {
+        ServerHand hand = createMockHand(BettingRound.FLOP, false);
+        Card[] aliceCards = {Card.HEARTS_A, Card.SPADES_K};
+        when(hand.getPlayerCards(players.get(0))).thenReturn(aliceCards);
+        Card[] community = {Card.HEARTS_2, Card.DIAMONDS_7, Card.SPADES_T};
+        when(hand.getCommunityCards()).thenReturn(community);
+
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, hand);
+
+        // Observer sees community cards
+        assertArrayEquals(community, snapshot.communityCards());
+        // Observer sees NO hole cards
+        assertNull(snapshot.myHoleCards());
+        for (GameStateSnapshot.PlayerState ps : snapshot.players()) {
+            assertNull(ps.holeCards(), "SECURITY: Observer must never see hole cards");
+        }
+    }
+
+    @Test
+    void forObserver_withHand_includesBettingRoundAndBlinds() {
+        ServerHand hand = createMockHand(BettingRound.TURN, false);
+
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, hand);
+
+        assertEquals("TURN", snapshot.bettingRound());
+        assertEquals(0, snapshot.smallBlindSeat());
+        assertEquals(1, snapshot.bigBlindSeat());
+    }
+
+    @Test
+    void forObserver_doneHand_reportsShowdownRound() {
+        ServerHand hand = createMockHand(BettingRound.RIVER, true);
+
+        GameStateSnapshot snapshot = GameStateProjection.forObserver(table, hand);
+
+        assertEquals("SHOWDOWN", snapshot.bettingRound());
+    }
+
+    @Test
+    void forPlayer_tournamentStats_playerRank() {
+        // Set different chip counts: Alice=500, Bob=1500, Charlie=1000
+        players.get(0).setChipCount(500);
+        players.get(1).setChipCount(1500);
+        players.get(2).setChipCount(1000);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
+
+        // Alice has 500 chips, 2 players have more -> rank 3
+        assertEquals(3, snapshot.playerRank());
+    }
+
+    @Test
+    void forPlayer_tournamentStats_topPlayerRank1() {
+        players.get(0).setChipCount(2000);
+        players.get(1).setChipCount(500);
+        players.get(2).setChipCount(500);
+
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
+
+        assertEquals(1, snapshot.playerRank());
+    }
+
+    @Test
+    void forPlayer_tournamentStats_totalAndRemaining() {
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
+
+        assertEquals(3, snapshot.totalPlayers());
+        assertEquals(3, snapshot.playersRemaining());
+        assertEquals(1, snapshot.numTables());
+    }
+
+    @Test
+    void forPlayer_blindsFromTournament() {
+        GameStateSnapshot snapshot = GameStateProjection.forPlayer(table, null, 1);
+
+        assertEquals(10, snapshot.smallBlind());
+        assertEquals(20, snapshot.bigBlind());
+        assertEquals(0, snapshot.ante());
+        assertEquals(0, snapshot.level());
     }
 
     @Test

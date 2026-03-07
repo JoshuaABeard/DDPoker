@@ -17,6 +17,7 @@
  */
 package com.donohoedigital.games.poker.gameserver.controller;
 
+import com.donohoedigital.games.poker.engine.PokerConstants;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig.AIPlayerConfig;
 import com.donohoedigital.games.poker.protocol.dto.GameConfig.BlindLevel;
@@ -275,6 +276,146 @@ class TournamentProfileConverterTest {
         // Default profile has no house take
         GameConfig config = converter.convert(profile);
         assertThat(config.house()).isNull();
+    }
+
+    @Test
+    void payoutConfig_spotsType() {
+        profile.getMap().setInteger(TournamentProfile.PARAM_PAYOUT, PokerConstants.PAYOUT_SPOTS);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.payout()).isNotNull();
+        assertThat(config.payout().type()).isEqualTo("SPOTS");
+    }
+
+    @Test
+    void payoutConfig_percentType() {
+        profile.getMap().setInteger(TournamentProfile.PARAM_PAYOUT, PokerConstants.PAYOUT_PERC);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.payout().type()).isEqualTo("PERCENT");
+    }
+
+    @Test
+    void payoutConfig_satelliteType() {
+        profile.getMap().setInteger(TournamentProfile.PARAM_PAYOUT, PokerConstants.PAYOUT_SATELLITE);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.payout().type()).isEqualTo("SATELLITE");
+        assertThat(config.payout().allocationType()).isEqualTo("SATELLITE");
+    }
+
+    @Test
+    void houseConfig_withPercent() {
+        profile.getMap().setInteger(TournamentProfile.PARAM_HOUSEPERC, 10);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.house()).isNotNull();
+        assertThat(config.house().percent()).isEqualTo(10);
+        assertThat(config.house().cutType()).isEqualTo("PERCENT");
+    }
+
+    @Test
+    void houseConfig_withAmount() {
+        profile.getMap().setInteger(TournamentProfile.PARAM_HOUSEAMOUNT, 500);
+        profile.getMap().setInteger(TournamentProfile.PARAM_HOUSE, PokerConstants.HOUSE_AMOUNT);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.house()).isNotNull();
+        assertThat(config.house().amount()).isEqualTo(500);
+        assertThat(config.house().cutType()).isEqualTo("AMOUNT");
+    }
+
+    @Test
+    void inviteConfig_parsesCommaSeparatedInvitees() {
+        profile.setInviteOnly(true);
+        profile.getMap().setString(TournamentProfile.PARAM_INVITEES, "Alice, Bob, Charlie");
+        GameConfig config = converter.convert(profile);
+        assertThat(config.invite().invitees()).containsExactly("Alice", "Bob", "Charlie");
+    }
+
+    @Test
+    void inviteConfig_parsesNewlineSeparatedInvitees() {
+        profile.setInviteOnly(true);
+        profile.getMap().setString(TournamentProfile.PARAM_INVITEES, "Alice\nBob\nCharlie");
+        GameConfig config = converter.convert(profile);
+        assertThat(config.invite().invitees()).containsExactly("Alice", "Bob", "Charlie");
+    }
+
+    @Test
+    void inviteConfig_emptyInvitees() {
+        profile.setInviteOnly(true);
+        profile.getMap().setString(TournamentProfile.PARAM_INVITEES, "");
+        GameConfig config = converter.convert(profile);
+        assertThat(config.invite().invitees()).isEmpty();
+    }
+
+    @Test
+    void greetingTrimmed() {
+        profile.getMap().setString(TournamentProfile.PARAM_GREETING, "  Welcome!  ");
+        GameConfig config = converter.convert(profile);
+        assertThat(config.greeting()).isEqualTo("Welcome!");
+    }
+
+    @Test
+    void rebuyConfig_lessThanExpression() {
+        profile.setRebuys(true);
+        profile.getMap().setInteger(TournamentProfile.PARAM_REBUYEXPR, PokerConstants.REBUY_LT);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.rebuys().expressionType()).isEqualTo("LESS_THAN");
+    }
+
+    @Test
+    void rebuyConfig_lessThanOrEqualExpression() {
+        profile.setRebuys(true);
+        profile.getMap().setInteger(TournamentProfile.PARAM_REBUYEXPR, PokerConstants.REBUY_LTE);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.rebuys().expressionType()).isEqualTo("LESS_THAN_OR_EQUAL");
+    }
+
+    @Test
+    void scheduledStartConfig_withStartTime() {
+        profile.setScheduledStartEnabled(true);
+        profile.setStartTime(1700000000000L);
+        profile.setMinPlayersForStart(4);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.scheduledStart()).isNotNull();
+        assertThat(config.scheduledStart().enabled()).isTrue();
+        assertThat(config.scheduledStart().startTime()).isNotNull();
+        assertThat(config.scheduledStart().minPlayers()).isEqualTo(4);
+    }
+
+    @Test
+    void scheduledStartConfig_zeroStartTimeYieldsNull() {
+        profile.setScheduledStartEnabled(true);
+        profile.setStartTime(0);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.scheduledStart().startTime()).isNull();
+    }
+
+    @Test
+    void lateRegistrationConfig_averageChipMode() {
+        profile.setLateRegEnabled(true);
+        profile.setLateRegChips(PokerConstants.LATE_REG_CHIPS_AVERAGE);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.lateRegistration().chipMode()).isEqualTo("AVERAGE");
+    }
+
+    @Test
+    void lateRegistrationConfig_startingChipMode() {
+        profile.setLateRegEnabled(true);
+        profile.setLateRegChips(PokerConstants.LATE_REG_CHIPS_STARTING);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.lateRegistration().chipMode()).isEqualTo("STARTING");
+    }
+
+    @Test
+    void bettingConfig_maxRaises() {
+        profile.getMap().setInteger(TournamentProfile.PARAM_MAXRAISES, 4);
+        GameConfig config = converter.convert(profile);
+        assertThat(config.betting().maxRaises()).isEqualTo(4);
+    }
+
+    @Test
+    void limitHoldemGameTypeMapped() {
+        profile.getMap().setString(TournamentProfile.PARAM_GAMETYPE_DEFAULT, PokerConstants.DE_LIMIT_HOLDEM);
+        profile.fixLevels();
+        GameConfig config = converter.convert(profile);
+        assertThat(config.defaultGameType()).isEqualTo("LIMIT_HOLDEM");
     }
 
     @Test

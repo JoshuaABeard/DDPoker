@@ -218,4 +218,144 @@ class AuthControllerTest {
         mockMvc.perform(put("/api/v1/auth/password").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"oldPassword\":\"oldpass\",\"newPassword\":\"short\"}")).andExpect(status().isBadRequest());
     }
+
+    @Test
+    void changePassword_blankOldPassword_returns400() throws Exception {
+        mockMvc.perform(put("/api/v1/auth/password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"oldPassword\":\"\",\"newPassword\":\"newpass123\"}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void changePassword_tooLongPassword_returns400() throws Exception {
+        String longPass = "a".repeat(129);
+        mockMvc.perform(put("/api/v1/auth/password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"oldPassword\":\"oldpass\",\"newPassword\":\"" + longPass + "\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void wsToken_success_returnsToken() throws Exception {
+        when(authService.generateWsToken(eq(1L), eq("testuser"))).thenReturn("ws-token-abc");
+
+        mockMvc.perform(get("/api/v1/auth/ws-token")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value("ws-token-abc"));
+    }
+
+    @Test
+    void wsToken_rateLimited_returns429() throws Exception {
+        when(authService.generateWsToken(eq(1L), eq("testuser"))).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/auth/ws-token")).andExpect(status().isTooManyRequests())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    void me_success_returnsProfile() throws Exception {
+        when(authService.getCurrentUser(1L))
+                .thenReturn(new ProfileResponse(1L, "testuser", "test@example.com", true, false, false, null));
+
+        mockMvc.perform(get("/api/v1/auth/me")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("testuser"))
+                .andExpect(jsonPath("$.email").value("test@example.com"));
+    }
+
+    @Test
+    void me_notFound_returns404() throws Exception {
+        when(authService.getCurrentUser(1L)).thenReturn(null);
+
+        mockMvc.perform(get("/api/v1/auth/me")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void forgotPassword_blankEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Email is required"));
+    }
+
+    @Test
+    void forgotPassword_nullEmail_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.message").value("Email is required"));
+    }
+
+    @Test
+    void forgotPassword_devMode_returnsToken() throws Exception {
+        // Default test env has no active profiles, so isDevOrEmbedded() returns true
+        when(authService.forgotPassword("user@example.com")).thenReturn("reset-token-xyz");
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"user@example.com\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.resetToken").value("reset-token-xyz"));
+    }
+
+    @Test
+    void forgotPassword_devMode_noAccount_returnsEmptyOk() throws Exception {
+        when(authService.forgotPassword("unknown@example.com")).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/auth/forgot-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"unknown@example.com\"}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.resetToken").doesNotExist());
+    }
+
+    @Test
+    void resetPassword_blankToken_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"\",\"newPassword\":\"newpass123\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Token is required"));
+    }
+
+    @Test
+    void resetPassword_shortPassword_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"valid\",\"newPassword\":\"short\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password must be between 8 and 128 characters"));
+    }
+
+    @Test
+    void resetPassword_tooLongPassword_returns400() throws Exception {
+        String longPass = "a".repeat(129);
+        mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"valid\",\"newPassword\":\"" + longPass + "\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Password must be between 8 and 128 characters"));
+    }
+
+    @Test
+    void resetPassword_success_returnsOk() throws Exception {
+        doNothing().when(authService).resetPassword("valid-token", "newpass123");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"valid-token\",\"newPassword\":\"newpass123\"}")).andExpect(status().isOk());
+    }
+
+    @Test
+    void resetPassword_invalidToken_returns400() throws Exception {
+        doThrow(new AuthService.InvalidResetTokenException()).when(authService).resetPassword("expired-token",
+                "newpass123");
+
+        mockMvc.perform(post("/api/v1/auth/reset-password").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"token\":\"expired-token\",\"newPassword\":\"newpass123\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Invalid or expired reset token"));
+    }
+
+    @Test
+    void changeEmail_serviceFailure_returns400() throws Exception {
+        when(authService.requestEmailChange(eq("testuser"), anyString()))
+                .thenReturn(new RequestEmailChangeResponse(false, "Email already in use"));
+
+        mockMvc.perform(put("/api/v1/auth/email").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"email\":\"taken@example.com\"}")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
+
+    @Test
+    void resendVerification_failure_returns400() throws Exception {
+        when(authService.resendVerification("testuser"))
+                .thenReturn(new ResendVerificationResponse(false, false, "Email already verified"));
+
+        mockMvc.perform(post("/api/v1/auth/resend-verification")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+    }
 }
