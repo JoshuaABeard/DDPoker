@@ -20,6 +20,8 @@
 package com.donohoedigital.games.poker.online;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -117,5 +119,69 @@ class RestGameClientTest {
         assertThat(games).isEmpty();
         assertThat(path.get()).isEqualTo("/api/v1/games");
         assertThat(auth.get()).isEqualTo("Bearer jwt-123");
+    }
+
+    @Test
+    void cancelGame_serverRejectsWithForbidden_doesNotThrow() {
+        testServer.createContext("/api/v1/games/g1", exchange -> {
+            byte[] bytes = "Forbidden".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(403, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        RestGameClient client = new RestGameClient("http://localhost:" + port, "jwt-123");
+
+        // cancelGame is best-effort — server errors are intentionally swallowed
+        assertThatNoException().isThrownBy(() -> client.cancelGame("g1"));
+    }
+
+    @Test
+    void sendHeartbeat_serverReturnsError_doesNotThrow() {
+        testServer.createContext("/api/v1/games/g1/heartbeat", exchange -> {
+            exchange.sendResponseHeaders(500, -1);
+            exchange.getResponseBody().close();
+        });
+
+        RestGameClient client = new RestGameClient("http://localhost:" + port, "jwt-123");
+
+        // heartbeat is non-fatal — errors are intentionally swallowed
+        assertThatNoException().isThrownBy(() -> client.sendHeartbeat("g1"));
+    }
+
+    @Test
+    void joinGame_success_returnsJoinResponse() {
+        testServer.createContext("/api/v1/games/g1/join", exchange -> {
+            String json = "{\"wsUrl\":\"ws://localhost/ws/games/g1\",\"gameId\":\"g1\"}";
+            byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(200, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        RestGameClient client = new RestGameClient("http://localhost:" + port, "jwt-123");
+        var response = client.joinGame("g1", null);
+
+        assertThat(response.gameId()).isEqualTo("g1");
+        assertThat(response.wsUrl()).isEqualTo("ws://localhost/ws/games/g1");
+    }
+
+    @Test
+    void joinGame_serverReturnsNotFound_throwsWithStatusCode() {
+        testServer.createContext("/api/v1/games/g1/join", exchange -> {
+            byte[] bytes = "Game not found".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(404, bytes.length);
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(bytes);
+            }
+        });
+
+        RestGameClient client = new RestGameClient("http://localhost:" + port, "jwt-123");
+
+        assertThatThrownBy(() -> client.joinGame("g1", null)).isInstanceOf(RestGameClient.RestGameClientException.class)
+                .hasMessageContaining("joinGame returned 404");
     }
 }
