@@ -355,6 +355,218 @@ class ServerTournamentContextTest {
         assertEquals(20, table1.getNumOccupiedSeats() + table2.getNumOccupiedSeats());
     }
 
+    // === setLevel ===
+
+    @Test
+    void testSetLevel_validLevel() {
+        tournament.setLevel(3);
+        assertEquals(3, tournament.getLevel());
+    }
+
+    @Test
+    void testSetLevel_outOfRange_ignored() {
+        tournament.setLevel(100);
+        assertEquals(0, tournament.getLevel()); // unchanged
+    }
+
+    @Test
+    void testSetLevel_negative_ignored() {
+        tournament.setLevel(-1);
+        assertEquals(0, tournament.getLevel()); // unchanged
+    }
+
+    // === setGameOver ===
+
+    @Test
+    void testSetGameOver() {
+        assertFalse(tournament.isGameOver());
+        tournament.setGameOver(true);
+        assertTrue(tournament.isGameOver());
+    }
+
+    // === Out-of-range blind/ante lookups ===
+
+    @Test
+    void testGetSmallBlind_outOfRange_returnsZero() {
+        assertEquals(0, tournament.getSmallBlind(-1));
+        assertEquals(0, tournament.getSmallBlind(100));
+    }
+
+    @Test
+    void testGetBigBlind_outOfRange_returnsZero() {
+        assertEquals(0, tournament.getBigBlind(-1));
+        assertEquals(0, tournament.getBigBlind(100));
+    }
+
+    @Test
+    void testGetAnte_outOfRange_returnsZero() {
+        assertEquals(0, tournament.getAnte(-1));
+        assertEquals(0, tournament.getAnte(100));
+    }
+
+    @Test
+    void testIsBreakLevel_outOfRange_returnsFalse() {
+        assertFalse(tournament.isBreakLevel(-1));
+        assertFalse(tournament.isBreakLevel(100));
+    }
+
+    // === Additional properties ===
+
+    @Test
+    void testGetAllPlayers_returnsCopy() {
+        List<ServerPlayer> result = tournament.getAllPlayers();
+        assertEquals(6, result.size());
+        result.clear();
+        assertEquals(6, tournament.getAllPlayers().size()); // original unchanged
+    }
+
+    @Test
+    void testGetAllTables_returnsCopy() {
+        List<ServerGameTable> result = tournament.getAllTables();
+        assertEquals(1, result.size());
+        result.clear();
+        assertEquals(1, tournament.getAllTables().size()); // original unchanged
+    }
+
+    @Test
+    void testGetNumLevels() {
+        assertEquals(6, tournament.getNumLevels());
+    }
+
+    @Test
+    void testIsAllowAddons() {
+        assertTrue(tournament.isAllowAddons());
+    }
+
+    @Test
+    void testGetMaxRebuys() {
+        assertEquals(3, tournament.getMaxRebuys());
+    }
+
+    @Test
+    void testGetLevelMinutes() {
+        assertEquals(10, tournament.getLevelMinutes(0));
+        assertEquals(0, tournament.getLevelMinutes(-1));
+        assertEquals(0, tournament.getLevelMinutes(100));
+    }
+
+    // === Rebuy/Addon config ===
+
+    @Test
+    void testRebuyAddonConfig() {
+        tournament.setRebuyAddonConfig(500, 1000, 1000, 2000, 2);
+
+        assertEquals(500, tournament.getRebuyCost());
+        assertEquals(1000, tournament.getRebuyChips());
+        assertEquals(1000, tournament.getAddonCost());
+        assertEquals(2000, tournament.getAddonChips());
+        assertEquals(2, tournament.getAddonLevel());
+    }
+
+    @Test
+    void testDefaultAddonLevel() {
+        assertEquals(-1, tournament.getAddonLevel());
+    }
+
+    // === Hands-based level advancement ===
+
+    @Test
+    void testHandsBasedLevel_notExpired() {
+        ServerTournamentContext handsBased = new ServerTournamentContext(players, 1, STARTING_CHIPS, SMALL_BLINDS,
+                BIG_BLINDS, ANTES, LEVEL_MINUTES, BREAK_LEVELS, true, 0, 0, false, 0,
+                com.donohoedigital.games.poker.model.LevelAdvanceMode.HANDS, 5);
+
+        assertFalse(handsBased.isLevelExpired());
+    }
+
+    @Test
+    void testHandsBasedLevel_expiresAfterEnoughHands() {
+        ServerTournamentContext handsBased = new ServerTournamentContext(players, 1, STARTING_CHIPS, SMALL_BLINDS,
+                BIG_BLINDS, ANTES, LEVEL_MINUTES, BREAK_LEVELS, true, 0, 0, false, 0,
+                com.donohoedigital.games.poker.model.LevelAdvanceMode.HANDS, 3);
+
+        handsBased.incrementHandsPlayed();
+        handsBased.incrementHandsPlayed();
+        assertFalse(handsBased.isLevelExpired());
+
+        handsBased.incrementHandsPlayed();
+        assertTrue(handsBased.isLevelExpired());
+    }
+
+    // === Level expired past last level ===
+
+    @Test
+    void testIsLevelExpired_pastLastLevel_returnsFalse() {
+        for (int i = 0; i < 10; i++) {
+            tournament.nextLevel();
+        }
+        // Now past all configured levels
+        assertFalse(tournament.isLevelExpired());
+    }
+
+    // === getLocalPlayer with no humans ===
+
+    @Test
+    void testGetLocalPlayer_noHumans() {
+        List<ServerPlayer> aiOnly = new ArrayList<>();
+        aiOnly.add(new ServerPlayer(1, "AI1", false, 5, STARTING_CHIPS));
+        aiOnly.add(new ServerPlayer(2, "AI2", false, 5, STARTING_CHIPS));
+
+        ServerTournamentContext aiTournament = new ServerTournamentContext(aiOnly, 1, STARTING_CHIPS, SMALL_BLINDS,
+                BIG_BLINDS, ANTES, LEVEL_MINUTES, BREAK_LEVELS, true, 0, 0, false, 0);
+
+        assertNull(aiTournament.getLocalPlayer());
+    }
+
+    // === AI strategy overrides ===
+
+    @Test
+    void testAiStrategyOverrides() {
+        assertTrue(tournament.getAiStrategyOverrides().isEmpty());
+        tournament.getAiStrategyOverrides().put(2, 8);
+        assertEquals(8, tournament.getAiStrategyOverrides().get(2));
+    }
+
+    // === setMinChip ===
+
+    @Test
+    void testSetMinChip() {
+        assertEquals(1, tournament.getMinChip());
+        tournament.setMinChip(5);
+        assertEquals(5, tournament.getMinChip());
+    }
+
+    // === Scheduled start ===
+
+    @Test
+    void testScheduledStartTime_zero() {
+        assertEquals(0, tournament.getScheduledStartTime());
+    }
+
+    @Test
+    void testMinPlayersForScheduledStart_zero() {
+        assertEquals(0, tournament.getMinPlayersForScheduledStart());
+    }
+
+    // === toString ===
+
+    @Test
+    void testToString() {
+        String str = tournament.toString();
+        assertTrue(str.contains("tables=1"));
+        assertTrue(str.contains("players=6"));
+        assertTrue(str.contains("level=0"));
+        assertTrue(str.contains("practice=false"));
+        assertTrue(str.contains("gameOver=false"));
+    }
+
+    // === getLevelAdvanceMode ===
+
+    @Test
+    void testLevelAdvanceMode_defaultIsTime() {
+        assertEquals(com.donohoedigital.games.poker.model.LevelAdvanceMode.TIME, tournament.getLevelAdvanceMode());
+    }
+
     // === Practice Mode ===
 
     @Test

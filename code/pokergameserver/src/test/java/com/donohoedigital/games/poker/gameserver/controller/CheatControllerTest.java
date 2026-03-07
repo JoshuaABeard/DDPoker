@@ -272,6 +272,152 @@ class CheatControllerTest {
     }
 
     // -------------------------------------------------------------------------
+    // Game not found / player not found
+    // -------------------------------------------------------------------------
+
+    @Test
+    void changeChips_gameNotFound_returns404() throws Exception {
+        when(gameInstanceManager.getGame("missing")).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/games/missing/cheat/chips").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1,\"chipCount\":5000}")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void changeChips_playerNotFound_returns404() throws Exception {
+        GameInstance game = stubPracticeGame("g20", 1L);
+        ServerTournamentContext tournament = mock(ServerTournamentContext.class);
+        when(game.getTournament()).thenReturn(tournament);
+        when(tournament.getPlayerByID(999)).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/games/g20/cheat/chips").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":999,\"chipCount\":5000}")).andExpect(status().isNotFound());
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/games/{id}/cheat/level edge cases
+    // -------------------------------------------------------------------------
+
+    @Test
+    void changeLevel_noTournament_returns409() throws Exception {
+        GameInstance game = stubPracticeGame("g21", 1L);
+        when(game.getTournament()).thenReturn(null);
+
+        mockMvc.perform(
+                post("/api/v1/games/g21/cheat/level").contentType(MediaType.APPLICATION_JSON).content("{\"level\":3}"))
+                .andExpect(status().isConflict());
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/games/{id}/cheat/remove-player edge cases
+    // -------------------------------------------------------------------------
+
+    @Test
+    void removePlayer_alreadySittingOut_returns409() throws Exception {
+        GameInstance game = stubPracticeGame("g22", 1L);
+        ServerPlayer player = stubPlayer(game, -1);
+        when(player.isSittingOut()).thenReturn(true);
+
+        mockMvc.perform(post("/api/v1/games/g22/cheat/remove-player").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1}")).andExpect(status().isConflict());
+    }
+
+    @Test
+    void removePlayer_noTournament_returns409() throws Exception {
+        GameInstance game = stubPracticeGame("g23", 1L);
+        when(game.getTournament()).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/games/g23/cheat/remove-player").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1}")).andExpect(status().isConflict());
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/games/{id}/cheat/card edge cases
+    // -------------------------------------------------------------------------
+
+    @Test
+    void changeCard_invalidLocationFormat_returns400() throws Exception {
+        GameInstance game = stubPracticeGame("g24", 1L);
+        ServerHand hand = mock(ServerHand.class);
+        stubTable(game, hand);
+
+        mockMvc.perform(post("/api/v1/games/g24/cheat/card").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"location\":\"BADFORMAT\",\"newCard\":\"Ah\"}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void changeCard_unknownLocationType_returns400() throws Exception {
+        GameInstance game = stubPracticeGame("g25", 1L);
+        ServerHand hand = mock(ServerHand.class);
+        stubTable(game, hand);
+
+        mockMvc.perform(post("/api/v1/games/g25/cheat/card").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"location\":\"UNKNOWN:0\",\"newCard\":\"Ah\"}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void changeCard_playerLocationMissingIndex_returns400() throws Exception {
+        GameInstance game = stubPracticeGame("g26", 1L);
+        ServerHand hand = mock(ServerHand.class);
+        stubTable(game, hand);
+
+        mockMvc.perform(post("/api/v1/games/g26/cheat/card").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"location\":\"PLAYER:-1\",\"newCard\":\"Ah\"}")).andExpect(status().isBadRequest());
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/games/{id}/cheat/ai-strategy edge cases
+    // -------------------------------------------------------------------------
+
+    @Test
+    void aiStrategy_skillLevelTooLow_returns400() throws Exception {
+        stubPracticeGame("g27", 1L);
+
+        mockMvc.perform(post("/api/v1/games/g27/cheat/ai-strategy").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1,\"skillLevel\":0}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void aiStrategy_noTournament_returns409() throws Exception {
+        GameInstance game = stubPracticeGame("g28", 1L);
+        when(game.getTournament()).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/games/g28/cheat/ai-strategy").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1,\"skillLevel\":5}")).andExpect(status().isConflict());
+    }
+
+    @Test
+    void aiStrategy_playerNotInTournament_stillSucceeds() throws Exception {
+        GameInstance game = stubPracticeGame("g29", 1L);
+        ServerTournamentContext tournament = mock(ServerTournamentContext.class);
+        when(game.getTournament()).thenReturn(tournament);
+        java.util.Map<Integer, Integer> overrides = new java.util.concurrent.ConcurrentHashMap<>();
+        when(tournament.getAiStrategyOverrides()).thenReturn(overrides);
+        when(tournament.getPlayerByID(-1)).thenReturn(null);
+
+        mockMvc.perform(post("/api/v1/games/g29/cheat/ai-strategy").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1,\"skillLevel\":5}")).andExpect(status().isOk());
+
+        // Should still store the override even if player object is null
+        org.assertj.core.api.Assertions.assertThat(overrides).containsEntry(-1, 5);
+    }
+
+    // -------------------------------------------------------------------------
+    // POST /api/v1/games/{id}/cheat/chips zero is valid
+    // -------------------------------------------------------------------------
+
+    @Test
+    void changeChips_zeroIsValid() throws Exception {
+        GameInstance game = stubPracticeGame("g30", 1L);
+        ServerPlayer player = stubPlayer(game, -1);
+
+        mockMvc.perform(post("/api/v1/games/g30/cheat/chips").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"playerId\":-1,\"chipCount\":0}")).andExpect(status().isOk());
+
+        verify(player).setChipCount(0);
+    }
+
+    // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
 
