@@ -1309,6 +1309,75 @@ class ServerHandTest {
         assertEquals(15000, total, "Chip conservation must hold");
     }
 
+    @Test
+    void should_HandleOddChipInThreeWayTie() {
+        // 3 players with identical kickers — board plays for all three.
+        // Give all three junk hole cards below the board so the 5-card board IS the
+        // hand.
+        // Board: A-K-Q-J-9 (no flush possible if suits differ)
+        ServerDeck deck = new ServerDeck(List.of(Card.SPADES_2, Card.CLUBS_3, // Alice (seat 0) — junk
+                Card.HEARTS_2, Card.DIAMONDS_3, // Bob (seat 1) — junk
+                Card.CLUBS_2, Card.HEARTS_3, // Charlie (seat 2) — junk
+                Card.DIAMONDS_4, // burn before flop
+                Card.SPADES_A, Card.HEARTS_K, Card.DIAMONDS_Q, // flop: A K Q
+                Card.CLUBS_4, // burn before turn
+                Card.SPADES_J, // turn: J
+                Card.HEARTS_4, // burn before river
+                Card.CLUBS_9)); // river: 9 → board plays A-K-Q-J-9
+
+        ServerPlayer a = new ServerPlayer(20, "ThreeA", true, 0, 5000);
+        ServerPlayer b = new ServerPlayer(21, "ThreeB", true, 0, 5000);
+        ServerPlayer c = new ServerPlayer(22, "ThreeC", true, 0, 5000);
+        a.setSeat(0);
+        b.setSeat(1);
+        c.setSeat(2);
+        MockServerGameTable t3 = new MockServerGameTable(3);
+        t3.addPlayer(a, 0);
+        t3.addPlayer(b, 1);
+        t3.addPlayer(c, 2);
+
+        // ante=1, blinds 50/100, button=0, sb=1, bb=2
+        // Pot after deal = 3 (antes) + 50 (sb) + 100 (bb) = 153
+        ServerHand hand = new ServerHand(t3, 1, 50, 100, 1, 0, 1, 2, deck);
+        hand.deal();
+
+        // Alice calls 100, Bob calls 50 more, Charlie checks
+        hand.applyPlayerAction(a, PlayerAction.call());
+        hand.applyPlayerAction(b, PlayerAction.call());
+        hand.applyPlayerAction(c, PlayerAction.check());
+
+        // Pot = 100 + 100 + 101 = 301 (odd number for 3-way split)
+        assertEquals(301, hand.getPotSize(), "Pot should be 301");
+
+        while (hand.getRound() != BettingRound.SHOWDOWN) {
+            hand.advanceRound();
+        }
+        hand.resolve();
+
+        // All three have identical 5-card hands (board plays: AKQJ9).
+        // 301 / 3 = 100 remainder 1. The odd chip goes to one winner.
+        // Payouts: two players get 100, one gets 101.
+        // Alice put in 100 → net 0 or +1. Bob put in 100 → net 0 or +1.
+        // Charlie put in 101 (ante + BB) → net -1 or 0.
+        int aChips = a.getChipCount();
+        int bChips = b.getChipCount();
+        int cChips = c.getChipCount();
+
+        // Chip conservation
+        assertEquals(15000, aChips + bChips + cChips,
+                "Chip conservation must hold: " + aChips + "+" + bChips + "+" + cChips);
+
+        // Each player's payout is either 100 or 101 (floor or floor+1 of 301/3).
+        // Net = payout - contribution. With 301 total and 3-way split,
+        // exactly one player receives the odd chip.
+        // Verify that the total spread is at most 2 (one player +1, another -1)
+        // and that all three ended within a narrow band.
+        int max = Math.max(aChips, Math.max(bChips, cChips));
+        int min = Math.min(aChips, Math.min(bChips, cChips));
+        assertTrue(max - min <= 2, "Max chip difference should be <= 2 in 3-way tie with unequal contributions: A="
+                + aChips + " B=" + bChips + " C=" + cChips);
+    }
+
     /**
      * Mock table for testing. Implements ServerHand.MockTable interface.
      */
