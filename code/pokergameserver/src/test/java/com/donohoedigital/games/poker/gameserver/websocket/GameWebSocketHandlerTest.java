@@ -22,6 +22,8 @@ import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.GameServerProperties;
 import com.donohoedigital.games.poker.gameserver.ServerGameEventBus;
+import com.donohoedigital.games.poker.gameserver.ServerPlayerSession;
+import com.donohoedigital.games.poker.protocol.dto.GameConfig;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +163,7 @@ class GameWebSocketHandlerTest {
     void afterConnectionEstablished_waitingForPlayers_autoJoinsPlayer() throws Exception {
         when(gameInstance.getState()).thenReturn(GameInstanceState.WAITING_FOR_PLAYERS);
         when(gameInstance.hasPlayer(PROFILE_ID)).thenReturn(false);
+        when(gameInstance.prepareStart()).thenReturn(mock(ServerGameEventBus.class));
 
         handler.afterConnectionEstablished(session);
 
@@ -180,6 +183,12 @@ class GameWebSocketHandlerTest {
         when(gameInstance.getOwnerProfileId()).thenReturn(PROFILE_ID);
         // prepareStart() must return a non-null bus so the broadcaster can be wired
         when(gameInstance.prepareStart()).thenReturn(mock(ServerGameEventBus.class));
+        // Auto-start requires maxPlayers > 0 and enough players in sessions
+        GameConfig config = mock(GameConfig.class);
+        when(config.maxPlayers()).thenReturn(1);
+        when(gameInstance.getConfig()).thenReturn(config);
+        var sessions = java.util.Map.of(PROFILE_ID, mock(ServerPlayerSession.class));
+        when(gameInstance.getPlayerSessions()).thenReturn(new java.util.concurrent.ConcurrentHashMap<>(sessions));
 
         handler.afterConnectionEstablished(session);
 
@@ -193,6 +202,7 @@ class GameWebSocketHandlerTest {
         when(gameInstance.getState()).thenReturn(GameInstanceState.WAITING_FOR_PLAYERS);
         when(gameInstance.hasPlayer(PROFILE_ID)).thenReturn(true);
         when(gameInstance.getOwnerProfileId()).thenReturn(PROFILE_ID + 1); // different owner
+        when(gameInstance.prepareStart()).thenReturn(mock(ServerGameEventBus.class));
 
         handler.afterConnectionEstablished(session);
 

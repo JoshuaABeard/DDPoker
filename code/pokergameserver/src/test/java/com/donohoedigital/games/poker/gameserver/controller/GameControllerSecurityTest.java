@@ -36,6 +36,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
 import com.donohoedigital.games.poker.gameserver.service.AuthService;
@@ -58,6 +59,9 @@ class GameControllerSecurityTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private GameInstanceManager gameInstanceManager;
 
     // =========================================================================
     // Public endpoints — no auth required
