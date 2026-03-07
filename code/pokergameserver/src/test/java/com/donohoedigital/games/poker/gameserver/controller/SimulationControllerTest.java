@@ -71,6 +71,28 @@ class SimulationControllerTest {
     }
 
     @Test
+    void simulate_exhaustiveMode_noIterationsRequired() throws Exception {
+        SimulationResult result = new SimulationResult(55.0, 3.0, 42.0, 0, null, Map.of());
+
+        when(simulationService.simulate(anyList(), isNull(), eq(1), isNull(), isNull(), eq(true))).thenReturn(result);
+
+        mockMvc.perform(post("/api/v1/poker/simulate").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"holeCards\":[\"Ah\",\"Kd\"],\"numOpponents\":1,\"exhaustive\":true}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.win").value(55.0));
+    }
+
+    @Test
+    void simulate_withCommunityCards_passedToService() throws Exception {
+        SimulationResult result = new SimulationResult(60.0, 5.0, 35.0, 1000, null, Map.of());
+
+        when(simulationService.simulate(anyList(), anyList(), eq(1), eq(1000), isNull(), isNull())).thenReturn(result);
+
+        mockMvc.perform(post("/api/v1/poker/simulate").contentType(MediaType.APPLICATION_JSON).content(
+                "{\"holeCards\":[\"Ah\",\"Kd\"],\"communityCards\":[\"Td\",\"9s\",\"2c\"],\"numOpponents\":1,\"iterations\":1000}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.win").value(60.0));
+    }
+
+    @Test
     void simulate_serviceThrowsIllegalArgument_returns400() throws Exception {
         when(simulationService.simulate(anyList(), isNull(), eq(1), eq(1000), isNull(), isNull()))
                 .thenThrow(new IllegalArgumentException("Duplicate card"));

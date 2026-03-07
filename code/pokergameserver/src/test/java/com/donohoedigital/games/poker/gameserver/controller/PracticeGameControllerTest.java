@@ -149,6 +149,66 @@ class PracticeGameControllerTest {
         verify(mockInstance).addPlayer(anyLong(), anyString(), eq(false), anyInt());
     }
 
+    @Test
+    void humanDisplayNameOverridesUsername() throws Exception {
+        GameInstance mockInstance = stubMockInstance("game-7");
+
+        String configWithDisplayName = "{\"name\":\"Practice\"," + COMMON_FIELDS
+                + ",\"humanDisplayName\":\"MyCustomName\""
+                + ",\"aiPlayers\":[{\"name\":\"Computer 1\",\"skillLevel\":4}]}";
+
+        mockMvc.perform(
+                post("/api/v1/games/practice").contentType(MediaType.APPLICATION_JSON).content(configWithDisplayName))
+                .andExpect(status().isCreated());
+
+        // Human player should use the custom display name, not "testuser"
+        verify(mockInstance).addPlayer(eq(1L), eq("MyCustomName"), eq(false), eq(0));
+    }
+
+    @Test
+    void blankHumanDisplayNameFallsBackToUsername() throws Exception {
+        GameInstance mockInstance = stubMockInstance("game-8");
+
+        String configWithBlankName = "{\"name\":\"Practice\"," + COMMON_FIELDS + ",\"humanDisplayName\":\"  \""
+                + ",\"aiPlayers\":[{\"name\":\"Computer 1\",\"skillLevel\":4}]}";
+
+        mockMvc.perform(
+                post("/api/v1/games/practice").contentType(MediaType.APPLICATION_JSON).content(configWithBlankName))
+                .andExpect(status().isCreated());
+
+        verify(mockInstance).addPlayer(eq(1L), eq("testuser"), eq(false), eq(0));
+    }
+
+    @Test
+    void invalidAiSkillLevelClampedToDefault() throws Exception {
+        GameInstance mockInstance = stubMockInstance("game-9");
+
+        // Skill level 0 is out of range [1,7] — should be clamped to default (4)
+        String configWithBadSkill = "{\"name\":\"Practice\"," + COMMON_FIELDS
+                + ",\"aiPlayers\":[{\"name\":\"BadBot\",\"skillLevel\":0}]}";
+
+        mockMvc.perform(
+                post("/api/v1/games/practice").contentType(MediaType.APPLICATION_JSON).content(configWithBadSkill))
+                .andExpect(status().isCreated());
+
+        verify(mockInstance).addPlayer(eq(-1L), eq("BadBot"), eq(true), eq(4));
+    }
+
+    @Test
+    void highAiSkillLevelClampedToDefault() throws Exception {
+        GameInstance mockInstance = stubMockInstance("game-10");
+
+        // Skill level 99 is out of range [1,7] — should be clamped to default (4)
+        String configWithHighSkill = "{\"name\":\"Practice\"," + COMMON_FIELDS
+                + ",\"aiPlayers\":[{\"name\":\"OverBot\",\"skillLevel\":99}]}";
+
+        mockMvc.perform(
+                post("/api/v1/games/practice").contentType(MediaType.APPLICATION_JSON).content(configWithHighSkill))
+                .andExpect(status().isCreated());
+
+        verify(mockInstance).addPlayer(eq(-1L), eq("OverBot"), eq(true), eq(4));
+    }
+
     // -------------------------------------------------------------------------
     // Helper
     // -------------------------------------------------------------------------

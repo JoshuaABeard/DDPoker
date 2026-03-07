@@ -42,6 +42,7 @@ import com.donohoedigital.games.poker.protocol.dto.HandActionDetailData;
 import com.donohoedigital.games.poker.protocol.dto.HandDetailData;
 import com.donohoedigital.games.poker.protocol.dto.HandExportData;
 import com.donohoedigital.games.poker.protocol.dto.HandPlayerDetailData;
+import com.donohoedigital.games.poker.protocol.dto.HandRoundStatsData;
 import com.donohoedigital.games.poker.protocol.dto.HandStatsData;
 import com.donohoedigital.games.poker.protocol.dto.HandSummaryData;
 
@@ -119,5 +120,31 @@ class HandHistoryControllerTest {
 
         mockMvc.perform(get("/api/v1/games/game1/hands/export")).andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].handId").value(1)).andExpect(jsonPath("$[0].gameStyle").value("NO_LIMIT"));
+    }
+
+    @Test
+    void getRoundStats_returnsList() throws Exception {
+        HandRoundStatsData roundStats = new HandRoundStatsData("AKo", 5, 20.0, 10.0, 30.0, 15.0, 10.0, 5.0, 10.0, 60.0);
+        when(handHistoryService.getRoundStats("game1", 1)).thenReturn(List.of(roundStats));
+
+        mockMvc.perform(get("/api/v1/games/game1/hands/round-stats").param("round", "1")).andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].handClass").value("AKo")).andExpect(jsonPath("$[0].count").value(5));
+    }
+
+    @Test
+    void listHands_emptyPage_returnsEmptyContent() throws Exception {
+        when(handHistoryService.getHandSummaries(eq("empty-game"), any()))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        mockMvc.perform(get("/api/v1/games/empty-game/hands")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty()).andExpect(jsonPath("$.totalElements").value(0));
+    }
+
+    @Test
+    void getStats_emptyGame_returnsEmptyList() throws Exception {
+        when(handHistoryService.getHandStats("empty-game")).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/games/empty-game/hands/stats")).andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
     }
 }
