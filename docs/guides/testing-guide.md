@@ -43,6 +43,27 @@ All commands run from `code/`.
 
 Use `-P dev` for fast feedback while iterating. Use `mvn test` (no profile) for final verification before review.
 
+## Intent Testing Standards
+
+Tests should verify product behavior, not code mechanics. Ask: "Would this test catch a real bug that affects users?"
+
+### Per-Layer Guidelines
+
+| Layer | Test Should Verify | Anti-Pattern |
+|-------|-------------------|--------------|
+| **Engine** (pokerengine) | Poker rules (hand rankings, blind structure, payouts) | Getter/setter on model objects |
+| **Server Game** (pokergameserver core) | Game outcomes (correct winner, pot amounts, state transitions) | Data structure operations |
+| **Controller** (pokergameserver controllers) | API contracts (parameters passed to service, error codes, auth) | Mock returns X, assert X (tautological) |
+| **Client** (poker online) | User-facing behavior (reconnection, display updates) | Internal counters, scheduler state |
+| **E2E** (poker e2e) | End-to-end journeys with poker invariants | JSON field existence without value checks |
+
+### Checklist for New Tests
+
+- Test name describes a poker rule or user behavior, not a method name
+- Assertions verify outcomes, not intermediate state
+- If using mocks, `verify()` that correct parameters were passed
+- Would this test fail if there were a real poker bug?
+
 ## Coverage
 
 - Global JaCoCo threshold in the parent POM is intentionally `0.00`
