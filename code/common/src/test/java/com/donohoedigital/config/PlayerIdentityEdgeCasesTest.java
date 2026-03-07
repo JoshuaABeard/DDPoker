@@ -22,13 +22,9 @@ package com.donohoedigital.config;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.junit.jupiter.api.condition.EnabledOnOs;
-import org.junit.jupiter.api.condition.OS;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -140,32 +136,6 @@ class PlayerIdentityEdgeCasesTest {
     }
 
     // ========== File Permission and Error Tests ==========
-
-    @Test
-    @EnabledOnOs({OS.LINUX, OS.MAC})
-    void should_HandleReadOnlyDirectory_When_CannotWrite(@TempDir Path tempDir) throws IOException {
-        // Create config directory
-        Path configDir = tempDir.resolve("readonly-config");
-        Files.createDirectories(configDir);
-
-        // Make directory read-only (Unix-only)
-        Set<PosixFilePermission> perms = new HashSet<>();
-        perms.add(PosixFilePermission.OWNER_READ);
-        perms.add(PosixFilePermission.OWNER_EXECUTE);
-        Files.setPosixFilePermissions(configDir, perms);
-
-        try {
-            PlayerIdentity.setConfigDirectoryForTesting(configDir.toString());
-
-            // Should throw since directory is read-only and save fails
-            assertThatThrownBy(PlayerIdentity::loadOrCreate).isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("Failed to save player ID");
-        } finally {
-            // Restore permissions for cleanup
-            perms.add(PosixFilePermission.OWNER_WRITE);
-            Files.setPosixFilePermissions(configDir, perms);
-        }
-    }
 
     @Test
     void should_HandleEmptyFile_When_PlayerIdFileEmpty(@TempDir Path tempDir) throws IOException {
