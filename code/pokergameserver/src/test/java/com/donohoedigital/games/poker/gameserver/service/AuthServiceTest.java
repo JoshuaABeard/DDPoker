@@ -31,9 +31,11 @@ import org.springframework.test.context.ContextConfiguration;
 
 import com.donohoedigital.games.poker.gameserver.auth.JwtTokenProvider;
 import com.donohoedigital.games.poker.protocol.dto.LoginResponse;
+import com.donohoedigital.games.poker.protocol.dto.ProfileResponse;
 import com.donohoedigital.games.poker.protocol.dto.RequestEmailChangeResponse;
 import com.donohoedigital.games.poker.protocol.dto.ResendVerificationResponse;
 import com.donohoedigital.games.poker.protocol.dto.VerifyEmailResponse;
+import com.donohoedigital.games.poker.model.PasswordResetToken;
 import com.donohoedigital.games.poker.gameserver.persistence.TestJpaConfiguration;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.BanRepository;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.OnlineProfileRepository;
@@ -765,5 +767,206 @@ class AuthServiceTest {
 
         OnlineProfile updated = profileRepository.findByName("emailfailchange").orElseThrow();
         assertThat(updated.getPendingEmail()).isEqualTo("failchange@example.com");
+    }
+
+    // -------------------------------------------------------------------------
+    // forgotPassword tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void forgotPassword_withRegisteredEmail_returnsTokenAndCreatesResetToken() {
+        OnlineProfile profile = createProfile("forgotuser", "password123");
+
+        String token = authService.forgotPassword("forgotuser@example.com");
+
+        assertThat(token).isNotNull().isNotBlank();
+        assertThat(resetTokenRepository.findByToken(token)).isPresent();
+    }
+
+    @Test
+    void forgotPassword_withUnknownEmail_returnsNull() {
+        String token = authService.forgotPassword("nobody@example.com");
+
+        assertThat(token).isNull();
+    }
+
+    @Test
+    void forgotPassword_calledTwiceWithinRateLimit_returnsNullOnSecondCall() {
+        createProfile("ratelimitforgot", "pass");
+
+        String first = authService.forgotPassword("ratelimitforgot@example.com");
+        String second = authService.forgotPassword("ratelimitforgot@example.com");
+
+        assertThat(first).isNotNull();
+        assertThat(second).isNull();
+    }
+
+    @Test
+    void forgotPassword_rateLimitIsCaseInsensitive() {
+        createProfile("caseforgot", "pass");
+
+        String first = authService.forgotPassword("caseforgot@example.com");
+        String second = authService.forgotPassword("CaseForgot@Example.COM");
+
+        assertThat(first).isNotNull();
+        assertThat(second).isNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // resetPassword tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void resetPassword_withValidToken_updatesPasswordHash() {
+        OnlineProfile profile = createProfile("resetuser", "oldpass");
+        String token = authService.forgotPassword("resetuser@example.com");
+
+        authService.resetPassword(token, "newpass123");
+
+        // Verify new password works
+        LoginResponse response = authService.login("resetuser", "newpass123", false);
+        assertThat(response.success()).isTrue();
+    }
+
+    @Test
+    void resetPassword_withValidToken_marksTokenAsUsed() {
+        createProfile("resetused", "oldpass");
+        String token = authService.forgotPassword("resetused@example.com");
+
+        authService.resetPassword(token, "newpass123");
+
+        // Second attempt with same token should fail
+        assertThatThrownBy(() -> authService.resetPassword(token, "anotherpass"))
+                .isInstanceOf(AuthService.InvalidResetTokenException.class);
+    }
+
+    @Test
+    void resetPassword_withUnknownToken_throwsInvalidResetTokenException() {
+        assertThatThrownBy(() -> authService.resetPassword("bogus-token-value", "newpass"))
+                .isInstanceOf(AuthService.InvalidResetTokenException.class);
+    }
+
+    @Test
+    void resetPassword_withExpiredToken_throwsInvalidResetTokenException() {
+        OnlineProfile profile = createProfile("expiredresetuser", "oldpass");
+        String token = authService.forgotPassword("expiredresetuser@example.com");
+
+        // Manually expire the token
+        PasswordResetToken stored = resetTokenRepository.findByToken(token).orElseThrow();
+        stored.setExpiryDate(java.time.Instant.now().minusSeconds(3600));
+        resetTokenRepository.save(stored);
+
+        assertThatThrownBy(() -> authService.resetPassword(token, "newpass"))
+                .isInstanceOf(AuthService.InvalidResetTokenException.class);
+    }
+
+    // -------------------------------------------------------------------------
+    // getCurrentUser tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void getCurrentUser_withExistingProfile_returnsProfileResponse() {
+        OnlineProfile profile = createProfile("currentuser", "pass");
+
+        ProfileResponse response = authService.getCurrentUser(profile.getId());
+
+        assertThat(response).isNotNull();
+        assertThat(response.username()).isEqualTo("currentuser");
+        assertThat(response.email()).isEqualTo("currentuser@example.com");
+    }
+
+    @Test
+    void getCurrentUser_withNonexistentId_returnsNull() {
+        ProfileResponse response = authService.getCurrentUser(999999L);
+
+        assertThat(response).isNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // generateWsToken tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void generateWsToken_returnsNonNullJwt() {
+        String token = authService.generateWsToken(1L, "testuser");
+
+        assertThat(token).isNotNull().isNotBlank();
+    }
+
+    @Test
+    void generateWsToken_withinRateLimit_returnsTokensUpToLimit() {
+        // Should succeed for first 5 calls
+        for (int i = 0; i < 5; i++) {
+            assertThat(authService.generateWsToken(100L, "ratelimitwsuser")).isNotNull();
+        }
+
+        // 6th call should be rate-limited
+        assertThat(authService.generateWsToken(100L, "ratelimitwsuser")).isNull();
+    }
+
+    @Test
+    void generateWsToken_differentUsers_areIndependent() {
+        // Exhaust rate limit for user 200
+        for (int i = 0; i < 5; i++) {
+            authService.generateWsToken(200L, "user200");
+        }
+        assertThat(authService.generateWsToken(200L, "user200")).isNull();
+
+        // User 201 should still be fine
+        assertThat(authService.generateWsToken(201L, "user201")).isNotNull();
+    }
+
+    // -------------------------------------------------------------------------
+    // generateReconnectToken / generateObserveToken tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void generateReconnectToken_returnsNonNullJwt() {
+        String token = authService.generateReconnectToken(1L, "testuser", "game-123");
+
+        assertThat(token).isNotNull().isNotBlank();
+    }
+
+    @Test
+    void generateObserveToken_returnsNonNullJwt() {
+        String token = authService.generateObserveToken(1L, "testuser", "game-456");
+
+        assertThat(token).isNotNull().isNotBlank();
+    }
+
+    // -------------------------------------------------------------------------
+    // markJtiUsed / isJtiUsed tests
+    // -------------------------------------------------------------------------
+
+    @Test
+    void isJtiUsed_withUnknownJti_returnsFalse() {
+        assertThat(authService.isJtiUsed("unknown-jti")).isFalse();
+    }
+
+    @Test
+    void markJtiUsed_thenIsJtiUsed_returnsTrue() {
+        long futureExpiry = System.currentTimeMillis() + 60_000;
+        authService.markJtiUsed("test-jti-1", futureExpiry);
+
+        assertThat(authService.isJtiUsed("test-jti-1")).isTrue();
+    }
+
+    @Test
+    void isJtiUsed_afterExpiry_returnsFalseAndCleansUp() {
+        long pastExpiry = System.currentTimeMillis() - 1000;
+        authService.markJtiUsed("expired-jti", pastExpiry);
+
+        assertThat(authService.isJtiUsed("expired-jti")).isFalse();
+    }
+
+    @Test
+    void markJtiUsed_multipleJtis_trackedIndependently() {
+        long futureExpiry = System.currentTimeMillis() + 60_000;
+        authService.markJtiUsed("jti-a", futureExpiry);
+        authService.markJtiUsed("jti-b", futureExpiry);
+
+        assertThat(authService.isJtiUsed("jti-a")).isTrue();
+        assertThat(authService.isJtiUsed("jti-b")).isTrue();
+        assertThat(authService.isJtiUsed("jti-c")).isFalse();
     }
 }

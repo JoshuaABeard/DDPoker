@@ -212,4 +212,163 @@ class FormatTest {
         // A string with no numeric prefix should yield 0.0
         assertThat(Format.atof("xyz")).isCloseTo(0.0, within(0.0001));
     }
+
+    // -----------------------------------------------------------------------
+    // atol()
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_ConvertDecimalString_When_AtolCalled() {
+        assertThat(Format.atol("12345678901")).isEqualTo(12345678901L);
+    }
+
+    @Test
+    void should_ConvertNegative_When_AtolCalledWithMinusSign() {
+        assertThat(Format.atol("-999")).isEqualTo(-999L);
+    }
+
+    @Test
+    void should_ConvertHex_When_AtolCalledWith0xPrefix() {
+        assertThat(Format.atol("0xFF")).isEqualTo(255L);
+    }
+
+    @Test
+    void should_ConvertOctal_When_AtolCalledWithLeadingZero() {
+        assertThat(Format.atol("017")).isEqualTo(15L);
+    }
+
+    // -----------------------------------------------------------------------
+    // form() with prefix/suffix text
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_IncludePrefixAndSuffix_When_FormatHasSurroundingText() {
+        Format f = new Format("value: %d cents");
+        assertThat(f.form(42)).isEqualTo("value: 42 cents");
+    }
+
+    @Test
+    void should_HandlePercentEscape_When_FormatHasDoublePercent() {
+        // Prefix %% is unescaped to %; suffix %% is kept as-is
+        Format f = new Format("%%done: %d%%");
+        assertThat(f.form(50)).isEqualTo("%done: 50%%");
+    }
+
+    // -----------------------------------------------------------------------
+    // form(long) - octal
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_FormatOctal_When_FormatCodeIsO() {
+        Format f = new Format("%o");
+        assertThat(f.form(255)).isEqualTo("377");
+    }
+
+    @Test
+    void should_FormatOctalWithAlt_When_HashModifier() {
+        Format f = new Format("%#o");
+        assertThat(f.form(255)).isEqualTo("0377");
+    }
+
+    // -----------------------------------------------------------------------
+    // form(long) - hex with negative
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_FormatUpperHex_When_FormatCodeIsUpperX() {
+        Format f = new Format("%X");
+        assertThat(f.form(255)).isEqualTo("FF");
+    }
+
+    @Test
+    void should_FormatHexWithAlt_When_HashModifier() {
+        Format f = new Format("%#x");
+        assertThat(f.form(255)).isEqualTo("0xff");
+    }
+
+    // -----------------------------------------------------------------------
+    // form(char)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_FormatCharacter_When_FormatCodeIsC() {
+        Format f = new Format("%c");
+        assertThat(f.form('A')).isEqualTo("A");
+    }
+
+    @Test
+    void should_PadCharacter_When_WidthSpecified() {
+        Format f = new Format("%5c");
+        assertThat(f.form('X')).isEqualTo("    X");
+    }
+
+    // -----------------------------------------------------------------------
+    // form(double) - additional edge cases
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_FormatNegativeDouble_When_NegativeValue() {
+        Format f = new Format("%10.2f");
+        assertThat(f.form(-3.14)).isEqualTo("     -3.14");
+    }
+
+    @Test
+    void should_FormatWithPlusSign_When_PlusModifier() {
+        Format f = new Format("%+.1f");
+        assertThat(f.form(5.0)).isEqualTo("+5.0");
+    }
+
+    @Test
+    void should_FormatScientific_When_FormatCodeIsE() {
+        Format f = new Format("%.2e");
+        String result = f.form(12345.6);
+        assertThat(result).containsIgnoringCase("e");
+    }
+
+    @Test
+    void should_FormatGeneral_When_FormatCodeIsG() {
+        Format f = new Format("%g");
+        String result = f.form(0.00001);
+        // %g should use scientific notation for very small numbers
+        assertThat(result).containsIgnoringCase("e");
+    }
+
+    // -----------------------------------------------------------------------
+    // form(String) - edge cases
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_LeftAlignString_When_MinusModifier() {
+        Format f = new Format("%-10s");
+        assertThat(f.form("hi")).isEqualTo("hi        ");
+    }
+
+    // -----------------------------------------------------------------------
+    // atoi() - additional edge cases
+    // -----------------------------------------------------------------------
+
+    @Test
+    void should_ParseWithPlusSign_When_AtoiCalledWithPlus() {
+        assertThat(Format.atoi("+42")).isEqualTo(42);
+    }
+
+    @Test
+    void should_ReturnZero_When_AtoiCalledWithEmptyString() {
+        assertThat(Format.atoi("")).isEqualTo(0);
+    }
+
+    @Test
+    void should_StopAtNonNumeric_When_AtoiCalledWithMixedContent() {
+        assertThat(Format.atoi("123abc")).isEqualTo(123);
+    }
+
+    @Test
+    void should_HandleWhitespace_When_AtoiCalledWithLeadingSpaces() {
+        assertThat(Format.atoi("  42")).isEqualTo(42);
+    }
+
+    @Test
+    void should_ParseUppercaseHex_When_AtoiCalledWith0X() {
+        assertThat(Format.atoi("0XFF")).isEqualTo(255);
+    }
 }

@@ -35,7 +35,9 @@ import com.donohoedigital.games.poker.gameserver.GameServerException;
 import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
 import com.donohoedigital.games.poker.protocol.dto.GameJoinResponse;
 import com.donohoedigital.games.poker.protocol.dto.GameListResponse;
+import com.donohoedigital.games.poker.protocol.dto.GameSettingsRequest;
 import com.donohoedigital.games.poker.protocol.dto.GameSummary;
+import com.donohoedigital.games.poker.gameserver.GameServerException.ErrorCode;
 import com.donohoedigital.games.poker.gameserver.persistence.TestJpaConfiguration;
 import com.donohoedigital.games.poker.gameserver.persistence.entity.GameInstanceEntity;
 import com.donohoedigital.games.poker.gameserver.persistence.repository.GameEventRepository;
@@ -381,6 +383,223 @@ class GameServiceTest {
         assertThat(game.blinds().smallBlind()).isEqualTo(10);
         assertThat(game.blinds().bigBlind()).isEqualTo(20);
         assertThat(game.blinds().ante()).isEqualTo(0);
+    }
+
+    // =========================================================================
+    // updateSettings
+    // =========================================================================
+
+    @Test
+    void updateSettings_updatesNameAndMaxPlayers() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        GameSettingsRequest request = new GameSettingsRequest("New Name", 6, null, null);
+        GameSummary updated = gameService.updateSettings(gameId, 1L, request);
+
+        assertThat(updated.name()).isEqualTo("New Name");
+        assertThat(updated.maxPlayers()).isEqualTo(6);
+    }
+
+    @Test
+    void updateSettings_setsPassword_makesGamePrivate() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        GameSettingsRequest request = new GameSettingsRequest(null, null, null, "secret123");
+        GameSummary updated = gameService.updateSettings(gameId, 1L, request);
+
+        assertThat(updated.isPrivate()).isTrue();
+        assertThat(updated.wsUrl()).isNull();
+    }
+
+    @Test
+    void updateSettings_emptyPassword_removesPassword() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        // Set password first
+        gameService.updateSettings(gameId, 1L, new GameSettingsRequest(null, null, null, "secret"));
+        // Remove it
+        GameSummary updated = gameService.updateSettings(gameId, 1L, new GameSettingsRequest(null, null, null, ""));
+
+        assertThat(updated.isPrivate()).isFalse();
+    }
+
+    @Test
+    void updateSettings_nullFields_noChanges() {
+        String gameId = gameService.createGame(createTestConfig("Original"), 1L, "owner");
+
+        GameSettingsRequest request = new GameSettingsRequest(null, null, null, null);
+        GameSummary updated = gameService.updateSettings(gameId, 1L, request);
+
+        assertThat(updated.name()).isEqualTo("Original");
+        assertThat(updated.maxPlayers()).isEqualTo(9);
+    }
+
+    @Test
+    void updateSettings_communityGame_throwsNotApplicable() {
+        CommunityGameRegisterRequest req = new CommunityGameRegisterRequest("Community", "ws://1.2.3.4:8765/ws/games/x",
+                null, null);
+        GameSummary summary = gameService.registerCommunityGame(1L, "host", req);
+
+        GameSettingsRequest request = new GameSettingsRequest("New Name", null, null, null);
+
+        assertThatThrownBy(() -> gameService.updateSettings(summary.gameId(), 1L, request))
+                .isInstanceOf(GameServerException.class).extracting(e -> ((GameServerException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NOT_APPLICABLE);
+    }
+
+    @Test
+    void updateSettings_nonOwner_throwsNotGameOwner() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        GameSettingsRequest request = new GameSettingsRequest("Hijack", null, null, null);
+
+        assertThatThrownBy(() -> gameService.updateSettings(gameId, 99L, request))
+                .isInstanceOf(GameServerException.class).extracting(e -> ((GameServerException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NOT_GAME_OWNER);
+    }
+
+    @Test
+    void updateSettings_gameNotInLobby_throwsGameNotInLobby() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+        // Manually set to IN_PROGRESS
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setStatus(GameInstanceState.IN_PROGRESS);
+        gameInstanceRepository.save(entity);
+
+        GameSettingsRequest request = new GameSettingsRequest("Too Late", null, null, null);
+
+        assertThatThrownBy(() -> gameService.updateSettings(gameId, 1L, request))
+                .isInstanceOf(GameServerException.class).extracting(e -> ((GameServerException) e).getErrorCode())
+                .isEqualTo(ErrorCode.GAME_NOT_IN_LOBBY);
+    }
+
+    // =========================================================================
+    // kickFromLobby
+    // =========================================================================
+
+    @Test
+    void kickFromLobby_communityGame_throwsNotApplicable() {
+        CommunityGameRegisterRequest req = new CommunityGameRegisterRequest("Community", "ws://1.2.3.4:8765/ws/games/x",
+                null, null);
+        GameSummary summary = gameService.registerCommunityGame(1L, "host", req);
+
+        assertThatThrownBy(() -> gameService.kickFromLobby(summary.gameId(), 1L, 2L))
+                .isInstanceOf(GameServerException.class).extracting(e -> ((GameServerException) e).getErrorCode())
+                .isEqualTo(ErrorCode.NOT_APPLICABLE);
+    }
+
+    @Test
+    void kickFromLobby_nonOwner_throwsNotGameOwner() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        assertThatThrownBy(() -> gameService.kickFromLobby(gameId, 99L, 2L)).isInstanceOf(GameServerException.class)
+                .extracting(e -> ((GameServerException) e).getErrorCode()).isEqualTo(ErrorCode.NOT_GAME_OWNER);
+    }
+
+    @Test
+    void kickFromLobby_gameNotInLobby_throwsGameNotInLobby() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setStatus(GameInstanceState.IN_PROGRESS);
+        gameInstanceRepository.save(entity);
+
+        assertThatThrownBy(() -> gameService.kickFromLobby(gameId, 1L, 2L)).isInstanceOf(GameServerException.class)
+                .extracting(e -> ((GameServerException) e).getErrorCode()).isEqualTo(ErrorCode.GAME_NOT_IN_LOBBY);
+    }
+
+    @Test
+    void kickFromLobby_serverGame_decrementsPlayerCount() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+        // Set some player count first
+        gameService.incrementPlayerCount(gameId);
+        gameService.incrementPlayerCount(gameId);
+
+        // No GameInstanceManager in test — kick just decrements DB count
+        gameService.kickFromLobby(gameId, 1L, 2L);
+
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        assertThat(entity.getPlayerCount()).isEqualTo(1);
+    }
+
+    // =========================================================================
+    // observeGame
+    // =========================================================================
+
+    @Test
+    void observeGame_waitingForPlayers_returnsJoinResponse() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        GameJoinResponse response = gameService.observeGame(gameId);
+
+        assertThat(response).isNotNull();
+        assertThat(response.gameId()).isEqualTo(gameId);
+        assertThat(response.wsUrl()).contains("/ws/games/");
+    }
+
+    @Test
+    void observeGame_inProgress_returnsJoinResponse() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setStatus(GameInstanceState.IN_PROGRESS);
+        gameInstanceRepository.save(entity);
+
+        GameJoinResponse response = gameService.observeGame(gameId);
+
+        assertThat(response).isNotNull();
+        assertThat(response.gameId()).isEqualTo(gameId);
+    }
+
+    @Test
+    void observeGame_completedGame_throwsNotObservable() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        entity.setStatus(GameInstanceState.COMPLETED);
+        gameInstanceRepository.save(entity);
+
+        assertThatThrownBy(() -> gameService.observeGame(gameId)).isInstanceOf(GameServerException.class);
+    }
+
+    @Test
+    void observeGame_nonexistentGame_throwsGameNotFound() {
+        assertThatThrownBy(() -> gameService.observeGame("nonexistent-id")).isInstanceOf(GameServerException.class)
+                .extracting(e -> ((GameServerException) e).getErrorCode()).isEqualTo(ErrorCode.GAME_NOT_FOUND);
+    }
+
+    // =========================================================================
+    // incrementPlayerCount / decrementPlayerCount
+    // =========================================================================
+
+    @Test
+    void incrementPlayerCount_increasesCount() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        gameService.incrementPlayerCount(gameId);
+        gameService.incrementPlayerCount(gameId);
+
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        assertThat(entity.getPlayerCount()).isEqualTo(2);
+    }
+
+    @Test
+    void decrementPlayerCount_decreasesCount() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+        gameService.incrementPlayerCount(gameId);
+        gameService.incrementPlayerCount(gameId);
+
+        gameService.decrementPlayerCount(gameId);
+
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        assertThat(entity.getPlayerCount()).isEqualTo(1);
+    }
+
+    @Test
+    void decrementPlayerCount_clampedToZero() {
+        String gameId = gameService.createGame(createTestConfig(), 1L, "owner");
+
+        gameService.decrementPlayerCount(gameId);
+
+        GameInstanceEntity entity = gameInstanceRepository.findById(gameId).orElseThrow();
+        assertThat(entity.getPlayerCount()).isEqualTo(0);
     }
 
     // =========================================================================

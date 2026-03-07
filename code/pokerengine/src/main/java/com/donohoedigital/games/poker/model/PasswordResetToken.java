@@ -52,7 +52,7 @@ public class PasswordResetToken implements BaseModel<Long> {
     @Column(name = "prt_id", nullable = false)
     private Long id;
 
-    @Column(name = "prt_token", unique = true, nullable = false, length = 36)
+    @Column(name = "prt_token", unique = true, nullable = false, length = 64)
     private String token;
 
     @Column(name = "prt_profile_id", nullable = false)

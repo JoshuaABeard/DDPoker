@@ -79,6 +79,35 @@ class ProfileServiceTest {
         assertThat(success).isFalse();
     }
 
+    // =========================================================================
+    // changePassword
+    // =========================================================================
+
+    @Test
+    void changePassword_withCorrectOldPassword_updatesHash() {
+        OnlineProfile profile = createProfile("pwduser", "pwd@example.com");
+
+        profileService.changePassword(profile.getId(), "password", "newpassword");
+
+        OnlineProfile updated = profileRepository.findById(profile.getId()).orElseThrow();
+        assertThat(org.mindrot.jbcrypt.BCrypt.checkpw("newpassword", updated.getPasswordHash())).isTrue();
+        assertThat(org.mindrot.jbcrypt.BCrypt.checkpw("password", updated.getPasswordHash())).isFalse();
+    }
+
+    @Test
+    void changePassword_withWrongOldPassword_throwsInvalidPasswordException() {
+        OnlineProfile profile = createProfile("wrongpwduser", "wrong@example.com");
+
+        assertThatThrownBy(() -> profileService.changePassword(profile.getId(), "wrongpass", "newpass"))
+                .isInstanceOf(ProfileService.InvalidPasswordException.class);
+    }
+
+    @Test
+    void changePassword_withNonexistentProfile_throwsIllegalArgumentException() {
+        assertThatThrownBy(() -> profileService.changePassword(999L, "old", "new"))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
     private OnlineProfile createProfile(String name, String email) {
         OnlineProfile profile = new OnlineProfile();
         profile.setName(name);
