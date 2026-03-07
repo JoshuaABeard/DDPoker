@@ -186,4 +186,43 @@ class AdminControllerTest {
 
         mockMvc.perform(delete("/api/v1/admin/bans/999")).andExpect(status().isNotFound());
     }
+
+    @Test
+    void addBan_profileBanMissingProfileId_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/bans").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"banType\":\"PROFILE\",\"reason\":\"no id\"}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void addBan_nullBanType_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/bans").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"profileId\":1,\"reason\":\"null type\"}")).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void resendVerification_notFound_returns404() throws Exception {
+        when(profileRepository.findById(999L)).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/api/v1/admin/profiles/999/resend-verification")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void searchProfiles_withEmailFilter() throws Exception {
+        when(profileRepository.searchProfiles(anyString(), anyString(), eq(false), any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/admin/profiles").param("email", "test@example.com")).andExpect(status().isOk());
+
+        verify(profileRepository).searchProfiles(eq("%"), eq("%test@example.com%"), eq(false), any());
+    }
+
+    @Test
+    void searchProfiles_includeRetired() throws Exception {
+        when(profileRepository.searchProfiles(anyString(), anyString(), eq(true), any()))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/api/v1/admin/profiles").param("includeRetired", "true")).andExpect(status().isOk());
+
+        verify(profileRepository).searchProfiles(eq("%"), eq("%"), eq(true), any());
+    }
 }
