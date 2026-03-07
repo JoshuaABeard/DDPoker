@@ -269,6 +269,100 @@ class GameControllerTest {
     }
 
     // =========================================================================
+    // PUT /api/v1/games/{id}/settings — updateSettings
+    // =========================================================================
+
+    @Test
+    void testUpdateSettings_passesGameIdAndAuthToService() throws Exception {
+        when(gameService.updateSettings(eq("game-123"), anyLong(), any()))
+                .thenReturn(buildSummary("game-123", "Updated Name", "SERVER"));
+
+        mockMvc.perform(put("/api/v1/games/game-123/settings").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"name\":\"Updated Name\",\"maxPlayers\":6}")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Name"));
+
+        verify(gameService).updateSettings(eq("game-123"), eq(1L),
+                argThat(req -> "Updated Name".equals(req.name()) && req.maxPlayers() == 6));
+    }
+
+    // =========================================================================
+    // POST /api/v1/games/{id}/kick — kickPlayer
+    // =========================================================================
+
+    @Test
+    void testKickPlayer_passesProfileIdToService() throws Exception {
+        doNothing().when(gameService).kickFromLobby(eq("game-123"), anyLong(), eq(42L));
+
+        mockMvc.perform(post("/api/v1/games/game-123/kick").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"profileId\":42}")).andExpect(status().isOk());
+
+        verify(gameService).kickFromLobby(eq("game-123"), eq(1L), eq(42L));
+    }
+
+    // =========================================================================
+    // POST /api/v1/games/{id}/observe — observeGame
+    // =========================================================================
+
+    @Test
+    void testObserveGame_returnsWsUrlWithObserveToken() throws Exception {
+        when(gameService.observeGame("game-123"))
+                .thenReturn(new GameJoinResponse("ws://localhost/ws/games/game-123", "game-123"));
+        when(authService.generateObserveToken(anyLong(), anyString(), eq("game-123"))).thenReturn("observe-token-abc");
+
+        mockMvc.perform(post("/api/v1/games/game-123/observe")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.wsUrl").value("ws://localhost/ws/games/game-123"))
+                .andExpect(jsonPath("$.gameId").value("game-123"));
+
+        verify(authService).generateObserveToken(eq(1L), eq("testuser"), eq("game-123"));
+    }
+
+    // =========================================================================
+    // GET /api/v1/games — listGames with query params
+    // =========================================================================
+
+    @Test
+    void testListGames_withStatusFilter_passesEnumsToService() throws Exception {
+        when(gameService.listGames(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(new GameListResponse(List.of(), 0, 0, 50));
+
+        mockMvc.perform(get("/api/v1/games").param("status", "WAITING_FOR_PLAYERS").param("status", "IN_PROGRESS"))
+                .andExpect(status().isOk());
+
+        verify(gameService).listGames(
+                argThat(statuses -> statuses != null && statuses.size() == 2
+                        && statuses.contains(
+                                com.donohoedigital.games.poker.gameserver.GameInstanceState.WAITING_FOR_PLAYERS)
+                        && statuses.contains(com.donohoedigital.games.poker.gameserver.GameInstanceState.IN_PROGRESS)),
+                isNull(), isNull(), eq(0), eq(50));
+    }
+
+    @Test
+    void testListGames_withSearchAndPagination_passesToService() throws Exception {
+        when(gameService.listGames(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(new GameListResponse(List.of(), 0, 2, 25));
+
+        mockMvc.perform(get("/api/v1/games").param("hostingType", "SERVER").param("search", "tournament")
+                .param("page", "2").param("pageSize", "25")).andExpect(status().isOk());
+
+        verify(gameService).listGames(isNull(), eq("SERVER"), eq("tournament"), eq(2), eq(25));
+    }
+
+    @Test
+    void testListGames_invalidStatusIgnored_validStatusesPassed() throws Exception {
+        when(gameService.listGames(any(), any(), any(), anyInt(), anyInt()))
+                .thenReturn(new GameListResponse(List.of(), 0, 0, 50));
+
+        mockMvc.perform(get("/api/v1/games").param("status", "WAITING_FOR_PLAYERS").param("status", "INVALID_GARBAGE"))
+                .andExpect(status().isOk());
+
+        verify(gameService).listGames(
+                argThat(statuses -> statuses != null && statuses.size() == 1
+                        && statuses.contains(
+                                com.donohoedigital.games.poker.gameserver.GameInstanceState.WAITING_FOR_PLAYERS)),
+                isNull(), isNull(), eq(0), eq(50));
+    }
+
+    // =========================================================================
     // Helpers
     // =========================================================================
 
