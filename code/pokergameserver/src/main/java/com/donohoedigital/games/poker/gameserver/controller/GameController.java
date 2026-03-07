@@ -39,6 +39,8 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import com.donohoedigital.games.poker.protocol.dto.GameConfig;
+import com.donohoedigital.games.poker.gameserver.GameInstance;
+import com.donohoedigital.games.poker.gameserver.GameInstanceManager;
 import com.donohoedigital.games.poker.gameserver.GameInstanceState;
 import com.donohoedigital.games.poker.gameserver.auth.JwtAuthenticationFilter.JwtAuthenticationToken;
 import com.donohoedigital.games.poker.protocol.dto.CommunityGameRegisterRequest;
@@ -66,10 +68,12 @@ public class GameController {
 
     private final GameService gameService;
     private final AuthService authService;
+    private final GameInstanceManager gameInstanceManager;
 
-    public GameController(GameService gameService, AuthService authService) {
+    public GameController(GameService gameService, AuthService authService, GameInstanceManager gameInstanceManager) {
         this.gameService = gameService;
         this.authService = authService;
+        this.gameInstanceManager = gameInstanceManager;
     }
 
     // =========================================================================
@@ -121,7 +125,15 @@ public class GameController {
     @PostMapping
     public ResponseEntity<CreateGameResponse> createGame(@Valid @RequestBody GameConfig config) {
         AuthenticatedUser user = getAuthenticatedUser();
+
+        // Persist to DB for discovery/listing
         String gameId = gameService.createGame(config, user.profileId(), user.username());
+
+        // Also create in-memory game instance so WebSocket connections can find it
+        GameInstance instance = gameInstanceManager.createGameWithId(gameId, user.profileId(), config);
+        instance.transitionToWaitingForPlayers();
+        instance.addPlayer(user.profileId(), user.username(), false, 0);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(new CreateGameResponse(gameId));
     }
 

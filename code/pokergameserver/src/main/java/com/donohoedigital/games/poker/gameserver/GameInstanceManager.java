@@ -114,6 +114,19 @@ public class GameInstanceManager {
     }
 
     /**
+     * Creates an in-memory game instance with a specific (pre-existing) game ID.
+     * Used when the game was already persisted to the DB by GameService.
+     */
+    public synchronized GameInstance createGameWithId(String gameId, long ownerProfileId, GameConfig config) {
+        if (shutdown) {
+            throw new GameServerException("Server is shutting down");
+        }
+        GameInstance instance = GameInstance.create(gameId, ownerProfileId, config, properties, aiProviderFactory);
+        games.put(gameId, instance);
+        return instance;
+    }
+
+    /**
      * Start a game with owner authorization.
      *
      * @param gameId
