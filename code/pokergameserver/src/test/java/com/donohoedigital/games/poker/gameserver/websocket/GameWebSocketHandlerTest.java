@@ -210,6 +210,60 @@ class GameWebSocketHandlerTest {
     }
 
     @Test
+    void afterConnectionEstablished_wsConnectScope_marksJtiUsed() throws Exception {
+        Claims connectClaims = mock(Claims.class);
+        when(connectClaims.get("profileId", Long.class)).thenReturn(PROFILE_ID);
+        when(connectClaims.getSubject()).thenReturn(USERNAME);
+        when(connectClaims.get("scope", String.class)).thenReturn("ws-connect");
+        when(connectClaims.getId()).thenReturn("unique-jti-123");
+        when(connectClaims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 60_000));
+        when(jwtTokenProvider.getClaims(VALID_TOKEN)).thenReturn(connectClaims);
+        when(authService.isJtiUsed("unique-jti-123")).thenReturn(false);
+
+        handler.afterConnectionEstablished(session);
+
+        // JTI must be marked as used to prevent replay
+        verify(authService).markJtiUsed(eq("unique-jti-123"), anyLong());
+        verify(session, never()).close(any(CloseStatus.class));
+    }
+
+    @Test
+    void afterConnectionEstablished_wsConnectScope_rejectsReplayedToken() throws Exception {
+        Claims connectClaims = mock(Claims.class);
+        when(connectClaims.get("profileId", Long.class)).thenReturn(PROFILE_ID);
+        when(connectClaims.getSubject()).thenReturn(USERNAME);
+        when(connectClaims.get("scope", String.class)).thenReturn("ws-connect");
+        when(connectClaims.getId()).thenReturn("used-jti-456");
+        when(connectClaims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 60_000));
+        when(jwtTokenProvider.getClaims(VALID_TOKEN)).thenReturn(connectClaims);
+        when(authService.isJtiUsed("used-jti-456")).thenReturn(true); // Already used!
+
+        handler.afterConnectionEstablished(session);
+
+        // Should reject with 4001 and NOT send any message
+        verify(session).close(argThat(status -> status.getCode() == 4001));
+        verify(session, never()).sendMessage(any());
+        // Must NOT mark JTI again
+        verify(authService, never()).markJtiUsed(anyString(), anyLong());
+    }
+
+    @Test
+    void afterConnectionEstablished_unknownScope_rejectsConnection() throws Exception {
+        Claims unknownClaims = mock(Claims.class);
+        when(unknownClaims.get("profileId", Long.class)).thenReturn(PROFILE_ID);
+        when(unknownClaims.getSubject()).thenReturn(USERNAME);
+        when(unknownClaims.get("scope", String.class)).thenReturn("admin");
+        when(unknownClaims.getId()).thenReturn(null);
+        when(unknownClaims.getExpiration()).thenReturn(new Date(System.currentTimeMillis() + 60_000));
+        when(jwtTokenProvider.getClaims(VALID_TOKEN)).thenReturn(unknownClaims);
+
+        handler.afterConnectionEstablished(session);
+
+        verify(session).close(argThat(status -> status.getCode() == 4001));
+        verify(session, never()).sendMessage(any());
+    }
+
+    @Test
     void handleTextMessage_delegatesToInboundMessageRouter() throws Exception {
         // First establish connection
         handler.afterConnectionEstablished(session);
