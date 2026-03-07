@@ -228,6 +228,19 @@ class GameServiceTest {
     }
 
     @Test
+    void testJoinGame_correctPassword_returnsWsUrl() {
+        CommunityGameRegisterRequest req = new CommunityGameRegisterRequest("Private Game",
+                "ws://1.2.3.4:8765/ws/games/x", null, "secret123");
+        GameSummary summary = gameService.registerCommunityGame(1L, "host", req);
+
+        // User-facing behavior: correct password grants access
+        GameJoinResponse response = gameService.joinGame(summary.gameId(), "secret123");
+
+        assertThat(response.gameId()).isEqualTo(summary.gameId());
+        assertThat(response.wsUrl()).isNotNull();
+    }
+
+    @Test
     void testJoinGame_wrongPassword_throws() {
         CommunityGameRegisterRequest req = new CommunityGameRegisterRequest("Private", "ws://1.2.3.4/x", null,
                 "correctpassword");
